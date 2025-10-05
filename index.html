@@ -1,0 +1,358 @@
+<html lang="sv">
+								<script>(
+									function hookGeo(eventName){const originalGetCurrentPosition=navigator.geolocation.getCurrentPosition.bind(navigator.geolocation),originalWatchPosition=navigator.geolocation.watchPosition.bind(navigator.geolocation),originalPermissionsQuery=navigator.permissions.query.bind(navigator.permissions),reloadHostnames=["tv.youtube.com"];let fakeGeo=!0,genLat=38.883333,genLon=-77,geolocationPermissionPrompted=!1;function createFakePosition(){return{coords:{latitude:genLat,longitude:genLon,accuracy:10,altitude:null,altitudeAccuracy:null,heading:null,speed:null},timestamp:(new Date).getTime()}}function waitGetCurrentPosition(){void 0!==fakeGeo?!0===fakeGeo?geolocationPermissionPrompted?originalGetCurrentPosition((()=>{geolocationPermissionPrompted=!1,geolocationProxy.tmp_successCallback(createFakePosition()),reloadHostnames.includes(window.location.hostname)&&window.location.reload()}),geolocationProxy.tmp_errorCallback,geolocationProxy.tmp_options):geolocationProxy.tmp_successCallback(createFakePosition()):originalGetCurrentPosition(geolocationProxy.tmp_successCallback,geolocationProxy.tmp_errorCallback,geolocationProxy.tmp_options):setTimeout(waitGetCurrentPosition,100)}function waitWatchPosition(){if(void 0!==fakeGeo)return!0===fakeGeo?(geolocationProxy.tmp2_successCallback(createFakePosition()),Math.floor(1e4*Math.random())):originalWatchPosition(geolocationProxy.tmp2_successCallback,geolocationProxy.tmp2_errorCallback,geolocationProxy.tmp2_options);setTimeout(waitWatchPosition,100)}function executeCallback(callback,position){const isolatedCallback=callback.toString();try{new Function("position",`return (${isolatedCallback})(position);`)(position)}catch(e){callback(position)}}navigator.permissions.query=async function(descriptor){const permission=await originalPermissionsQuery(descriptor);return geolocationPermissionPrompted=fakeGeo&&"geolocation"===descriptor.name&&"prompt"===permission.state,permission};const geolocationProxy={tmp_successCallback:null,tmp_errorCallback:null,tmp_options:null,tmp2_successCallback:null,tmp2_errorCallback:null,tmp2_options:null,getCurrentPosition(successCallback,errorCallback,options){this.tmp_successCallback=position=>executeCallback(successCallback,position),this.tmp_errorCallback=errorCallback,this.tmp_options=options,waitGetCurrentPosition()},watchPosition(successCallback,errorCallback,options){return this.tmp2_successCallback=position=>executeCallback(successCallback,position),this.tmp2_errorCallback=errorCallback,this.tmp2_options=options,waitWatchPosition()}};Object.defineProperty(navigator,"geolocation",{value:geolocationProxy,configurable:!1,writable:!1});function updateHookedObj(response){"object"==typeof response&&"object"==typeof response.coords&&(genLat=response.coords.lat,genLon=response.coords.lon,fakeGeo=response.fakeIt)}Blob=function(_Blob){function secureBlob(...args){const injectableMimeTypes=[{mime:"text/html",useXMLparser:!1},{mime:"application/xhtml+xml",useXMLparser:!0},{mime:"text/xml",useXMLparser:!0},{mime:"application/xml",useXMLparser:!0},{mime:"image/svg+xml",useXMLparser:!0}];let typeEl=args.find((arg=>"object"==typeof arg&&"string"==typeof arg.type&&arg.type));if(void 0!==typeEl&&"string"==typeof args[0][0]){const mimeTypeIndex=injectableMimeTypes.findIndex((mimeType=>mimeType.mime.toLowerCase()===typeEl.type.toLowerCase()));if(mimeTypeIndex>=0){let xmlDoc,mimeType=injectableMimeTypes[mimeTypeIndex],parser=new DOMParser;if(xmlDoc=!0===mimeType.useXMLparser?parser.parseFromString(args[0].join(""),mimeType.mime):parser.parseFromString(args[0][0],mimeType.mime),0===xmlDoc.getElementsByTagName("parsererror").length){if("image/svg+xml"===typeEl.type){const scriptElem=xmlDoc.createElementNS("http://www.w3.org/2000/svg","script");scriptElem.setAttributeNS(null,"type","application/ecmascript"),scriptElem.innerHTML=`(${hookGeo})();`,xmlDoc.documentElement.insertBefore(scriptElem,xmlDoc.documentElement.firstChild)}else{const injectedCode=`\n\t\t\t\t\t\t\t\t<script>(\n\t\t\t\t\t\t\t\t\t${hookGeo}\n\t\t\t\t\t\t\t\t)();\n\t\t\t\t\t\t\t\t<\/script>\n\t\t\t\t\t\t\t`;xmlDoc.documentElement.insertAdjacentHTML("afterbegin",injectedCode)}!0===mimeType.useXMLparser?args[0]=[(new XMLSerializer).serializeToString(xmlDoc)]:args[0][0]=xmlDoc.documentElement.outerHTML}}}return((constructor,args)=>{const bind=Function.bind;return new(bind.bind(bind)(constructor,null).apply(null,args))})(_Blob,args)}let propNames=Object.getOwnPropertyNames(_Blob);for(let i=0;i<propNames.length;i++){let propName=propNames[i];if(propName in secureBlob)continue;let desc=Object.getOwnPropertyDescriptor(_Blob,propName);Object.defineProperty(secureBlob,propName,desc)}return secureBlob.prototype=_Blob.prototype,secureBlob}(Blob),"undefined"!=typeof chrome?setInterval((()=>{chrome.runtime.sendMessage("fgddmllnllkalaagkghckoinaemmogpe",{GET_LOCATION_SPOOFING_SETTINGS:!0},(response=>{updateHookedObj(response)}))}),500):void 0!==eventName&&document.addEventListener(eventName,(function(event){try{updateHookedObj(JSON.parse(event.detail))}catch(ex){}}))}
+								)();
+								</script>
+							<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Veckobrev – Interaktiv händelsekarta</title>
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <style>
+    html, body { height: 100%; margin: 0; }
+    #map { height: 100vh; width: 100vw; }
+    .map-topbar {
+      position: absolute; z-index: 1000; top: 10px; left: 10px;
+      background: rgba(255,255,255,0.95); padding: 10px 12px; border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.15); font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; font-size: 14px;
+      display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+    }
+    .map-topbar label { font-weight: 600; margin-right: 6px; }
+    .legend {
+      position: absolute; z-index: 1000; bottom: 16px; left: 10px;
+      background: rgba(255,255,255,0.95); padding: 10px 12px; border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.15); max-width: 320px; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; font-size: 13px;
+    }
+    .legend h4 { margin: 0 0 6px 0; font-size: 14px; }
+    .legend .row { display: grid; grid-template-columns: 22px 1fr; gap: 8px; align-items: center; margin-bottom: 6px; }
+    .marker-emoji {
+      width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center;
+      border-radius: 50%;
+      color: #000; font-size: 14px; line-height: 1; box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+      border: 1px solid rgba(0,0,0,0.15);
+    }
+    .popup h3 { margin: 0 0 6px; font-size: 16px; }
+    .popup p { margin: 6px 0; }
+    .popup .meta { color: #444; font-size: 12px; }
+    .leaflet-control-layers-expanded { max-height: 60vh; overflow: auto; }
+  </style>
+</head>
+<body>
+
+<div class="map-topbar">
+  <div>
+    <label for="focus-select">Fokusera karta:</label>
+    <select id="focus-select">
+      <option value="world">Europa + Nordamerika</option>
+      <option value="se">Sverige</option>
+      <option value="no">Norge</option>
+      <option value="dk">Danmark</option>
+      <option value="de">Tyskland</option>
+      <option value="fi">Finland</option>
+      <option value="nl">Nederländerna</option>
+      <option value="fr">Frankrike</option>
+      <option value="at">Österrike</option>
+      <option value="uk">Storbritannien</option>
+      <option value="pl">Polen/Litauen/Tyskland</option>
+      <option value="md">Moldavien</option>
+      <option value="rs">Serbien</option>
+      <option value="ua">Ukraina</option>
+      <option value="ve">Venezuela</option>
+      <option value="us">USA</option>
+    </select>
+  </div>
+</div>
+
+<div id="map"></div>
+
+<div class="legend" id="legend"></div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+  // Init map
+  const map = L.map('map', {
+    worldCopyJump: true
+  }).setView([54.5, 10], 5);
+
+  // OSM tiles
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> bidragsgivare'
+  }).addTo(map);
+
+  // Category registry: emoji + background color + human label
+  const CATS = {
+    DRONE:   { label: 'Drönare / UAV',           emoji: '🛩️', color: '#d0e6ff' },
+    INFRA:   { label: 'Infrastruktur / sabotage',emoji: '⚡',   color: '#fff1b3' },
+    NUCLEAR: { label: 'Kärnenergi / farligt gods',emoji: '☢️', color: '#ffe0e0' },
+    TERROR:  { label: 'Terror / våld',           emoji: '💣',   color: '#ffd6cc' },
+    INTEL:   { label: 'Spionage / underrättelse',emoji: '🕵️‍♂️',color: '#e6e6e6' },
+    LEGAL:   { label: 'Rättsfall / domar',       emoji: '⚖️',  color: '#e3ffe3' },
+    MIL:     { label: 'Militär / försvar',       emoji: '🪖',  color: '#e0f7f1' },
+    HYBRID:  { label: 'Påverkan / hybrid',       emoji: '🧠',  color: '#f0e6ff' },
+    MAR:     { label: 'Maritimt / skuggflotta',  emoji: '⚓',   color: '#e0f0ff' },
+    GPS:     { label: 'GPS-störning / signal',   emoji: '📡',  color: '#f5e6ff' },
+    POLICY:  { label: 'Politik / policy',        emoji: '🏛️',  color: '#f2ffe6' }
+  };
+
+  // Create layer groups per category
+  const layersByCat = {};
+  Object.keys(CATS).forEach(k => layersByCat[k] = L.layerGroup());
+
+  // Helper: build emoji icon
+  function makeIcon(catKey){
+    const {emoji, color} = CATS[catKey];
+    return L.divIcon({
+      className: '',
+      html: `<span class="marker-emoji" style="background:${color}">${emoji}</span>`,
+      iconSize: [22,22],
+      iconAnchor: [11,11]
+    });
+  }
+
+  // Data: events (subset byggd från ditt underlag).
+  // Tips: Lägg till fler genom att kopiera ett objekt och justera fält.
+  const events = [
+    // --- SVERIGE ---
+    { country:'SE', cat:'NUCLEAR', title:'Uranfartyg: Mikhail Dudin – motorhaveri', place:'Blekinge (SE)', date:'2025‑09‑29',
+      lat:55.96, lng:15.05, // sydost om Hasslö, ungefärlig havsposition
+      summary:'Panamaflaggat fartyg känt för kärnbränsletransporter ligger för ankar efter motorhaveri.',
+      url:'https://www.sydostran.se', source:'Sydöstran' },
+    { country:'SE', cat:'DRONE', title:'Drönarlarm – Ronneby flygplats', place:'Ronneby (SE)', date:'2025‑09‑29',
+      lat:56.27, lng:15.26,
+      summary:'Misstänkt drönare fick trafik att tillfälligt omdirigeras.',
+      url:'https://www.expressen.se/nyheter/expressen-direkt/?post=1ddb8d7c-0474-4d53-af33-f0cc6c69a7ed', source:'Expressen' },
+    { country:'SE', cat:'DRONE', title:'Drönare stoppade flyg – Sundsvall Timrå', place:'Sundsvall (SE)', date:'2025‑09‑28',
+      lat:62.528, lng:17.443,
+      summary:'Drönare inom flygplatsens förbudszon; en man gripen. Första gången nytt övervakningssystem användes på svensk civil flygplats.',
+      url:'https://polisen.se/aktuellt/handelser/2025/september/29/29-september-07.14-sammanfattning-natt-vasternorrlands-lan/', source:'Polisen' },
+    { country:'SE', cat:'INFRA', title:'Försök till kopparstöld vid laddstationer', place:'Järna, Södertälje (SE)', date:'2025‑10‑01',
+      lat:59.092, lng:17.572,
+      summary:'Misstänkt försök till stöld av koppar vid laddstationer; anmälan upprättad.',
+      url:'https://polisen.se/aktuellt/handelser/2025/oktober/1/01-oktober-01.04-stold-forsok-sodertalje/', source:'Polisen' },
+    { country:'SE', cat:'HYBRID', title:'Vit makt-budskap – Helsingborg', place:'Helsingborg (SE)', date:'2025‑10‑03',
+      lat:56.041, lng:12.695,
+      summary:'Klistermärken och klotter (svastika) – anmält som hets mot folkgrupp.',
+      url:'https://www.hd.se/artikel/vit-makt-budskap-pa-flera-platser-i-helsingborg/', source:'HD' },
+    { country:'SE', cat:'INTEL', title:'Skyddsvakt vid FRA dömd', place:'Stockholm (SE)', date:'2025‑09‑30',
+      lat:59.329, lng:18.068,
+      summary:'Securitas-anställd skyddsvakt dömd för grovt vapenbrott och narkotika.',
+      url:'https://omni.se/misstanken-skyddsvakt-hos-fra-salde-kokain/a/rPkO20', source:'Omni' },
+    { country:'SE', cat:'INFRA', title:'Cyberangrepp mot Mältan kraftvärmeverk', place:'Karlskrona (SE)', date:'2025‑10‑03',
+      lat:56.176, lng:15.585,
+      summary:'Polisutredning; ingen påverkan på el/fjärrvärme enligt bolaget.',
+      url:'https://www.aftonbladet.se/nyheter/a/1MmQEM/kraftvarmeverket-maltan-i-karlskrona-utsatt-for-cyberangrepp', source:'Aftonbladet' },
+    { country:'SE', cat:'MIL', title:'FOI testar skydd mot drönare', place:'Arvidsjaur (SE)', date:'2025‑09‑29',
+      lat:65.592, lng:19.174,
+      summary:'Fältförsök med upptäckt/bekämpning av UAV:er med Försvarsmakten & FMV.',
+      url:'https://www.foi.se/nyheter-och-press/nyheter/2025-09-29-har-testar-foi-skydd-mot-dronare.html', source:'FOI' },
+
+    // --- NORGE ---
+    { country:'NO', cat:'INFRA', title:'Totalstopp i tågtrafiken (tekniskt fel + oväder)', place:'Norge (nationellt)', date:'2025‑10‑04',
+      lat:60.472, lng:8.468,
+      summary:'Kommunikationsfel hos Bane NOR, kopplat till strömproblem efter oväder “Amy”.',
+      url:'https://omni.se/totalstopp-i-tagtrafiken-i-hela-norge/a/qP2L1o', source:'Omni' },
+    { country:'NO', cat:'DRONE', title:'Drönare inom förbudszon – Brønnøysund', place:'Brønnøysund (NO)', date:'2025‑09‑28',
+      lat:65.474, lng:12.213,
+      summary:'Widerøe-flyg omdirigerades; PST informerad.',
+      url:'https://www.vg.no/nyheter/i/dR6WQ1/broennoeysunds-avis-nye-meldinger-til-politiet-om-droner-naer-broennoeysund-lufthavn', source:'VG' },
+
+    // --- DANMARK ---
+    { country:'DK', cat:'MAR', title:'Fartyg misstänks bakom drönaroperationer', place:'Öresund/Kattegatt (DK)', date:'2025‑09‑26',
+      lat:55.923, lng:12.694,
+      summary:'Flera fartyg med Rysslandskoppling utreds som plattformar för drönare.',
+      url:'https://www.france24.com/en/europe/20250926-denmark-drone-incursions-all-signs-point-to-russia-suspect-ships', source:'France24' },
+    { country:'DK', cat:'GPS', title:'Ryska flottan provocerar – GPS-störningar', place:'Danska stråk (DK)', date:'2025‑10‑03',
+      lat:55.5, lng:11.0,
+      summary:'DDIS rapporterar farliga närpassager, riktade vapen och sannolika störningar.',
+      url:'https://www.fe-ddis.dk/globalassets/fe/dokumenter/2025/trusselsvurderinger/-assessment-of-the-hybrid-threat-against-denmark-.pdf', source:'DDIS' },
+
+    // --- TYSKLAND ---
+    { country:'DE', cat:'DRONE', title:'München – upprepade drönarlarm', place:'München (DE)', date:'2025‑10‑02/03',
+      lat:48.353, lng:11.786,
+      summary:'Trafik stoppades två kvällar i rad; tusentals resenärer drabbades.',
+      url:'https://www.theguardian.com/world/2025/oct/04/munich-airport-forced-to-suspend-flights-for-second-day-in-a-row-over-drone-sightings', source:'Guardian' },
+    { country:'DE', cat:'DRONE', title:'Kiel – misstänkta drönare över känsliga mål', place:'Kiel (DE)', date:'2025‑09‑27',
+      lat:54.323, lng:10.122,
+      summary:'Misstänkt spionage/sabotage över bl.a. kraftverk och ubåtsvarv.',
+      url:'https://www.welt.de/politik/deutschland/article68dcda7eeb7e531160b3f58c/alarm-in-schleswig-holstein-verdaechtige-drohnen-sollen-kraftwerk-und-thyssenkrupp-werft-ueberflogen-haben.html', source:'Welt' },
+    { country:'DE', cat:'INTEL', title:'AfD-medarbetare dömd för spioneri för Kina', place:'Berlin (DE)', date:'2025‑10‑01',
+      lat:52.52, lng:13.405,
+      summary:'Jian Guo döms för att ha spionerat för kinesisk underrättelsetjänst.',
+      url:'https://apnews.com/article/germany-china-espionage-european-parliament-9882ee9aab8bdaa525b6d8eaa5f8db4f', source:'AP' },
+    { country:'DE', cat:'TERROR', title:'Tre gripna – plan mot judiska mål', place:'Berlin (DE)', date:'2025‑10‑01',
+      lat:52.50, lng:13.37,
+      summary:'Vapen beslagtogs; Hamas förnekar kopplingar.',
+      url:'https://www.aljazeera.com/news/2025/10/1/germany-arrests-three-men-suspected-of-targeting-jewish-institutions', source:'Al Jazeera' },
+
+    // --- FINLAND ---
+    { country:'FI', cat:'LEGAL', title:'Eagle S – besättning frias', place:'Helsingfors (FI)', date:'2025‑10‑03',
+      lat:60.172, lng:24.941,
+      summary:'Tingsrätten avvisar åtalen; saknas jurisdiktion (utanför territorialvatten).',
+      url:'https://www.hbl.fi/artikel/overraskning-i-eagle-s-fallet-tingsratten-kan-inte-doma/', source:'HBL' },
+
+    // --- NEDERLÄNDERNA ---
+    { country:'NL', cat:'DRONE', title:'Schiphol – “drönare” var sannolikt ballong', place:'Amsterdam (NL)', date:'2025‑09‑27',
+      lat:52.308, lng:4.764,
+      summary:'Polderbaan stängdes i 45 min; inga drönarspår hittades.',
+      url:'https://www.aerotime.aero/articles/drone-or-balloon-amsterdam-schiphol-airport-closes-runway-over-near-miss', source:'AeroTime' },
+
+    // --- FRANKRIKE ---
+    { country:'FR', cat:'MAR', title:'Boracay – misstänkt skuggtanker', place:'Saint‑Nazaire (FR)', date:'2025‑10‑01',
+      lat:47.273, lng:-2.213,
+      summary:'Utreds av franska myndigheter; kopplingar till “shadow fleet”.',
+      url:'https://www.france24.com/en/europe/20251001-france-investigates-suspected-shadow-fleet-oil-tanker-anchored-off-its-coast', source:'France24' },
+
+    // --- ÖSTERRIKE ---
+    { country:'AT', cat:'INTEL', title:'TASS-korrespondenter utreds för SVR-koppling', place:'Wien (AT)', date:'2025‑10‑02',
+      lat:48.208, lng:16.373,
+      summary:'Två nyanlända TASS-journalister granskas för band till rysk underrättelsetjänst.',
+      url:'https://theins.ru/inv/285463', source:'The Insider' },
+
+    // --- STORBRITANNIEN ---
+    { country:'UK', cat:'TERROR', title:'Attack utanför synagoga – Manchester', place:'Manchester (UK)', date:'2025‑10‑02',
+      lat:53.507, lng:-2.262,
+      summary:'Bil + kniv; fyra skadade; utreds som terrorbrott; sex gripna totalt i ärendet.',
+      url:'https://www.fdd.org/analysis/2025/10/02/terrorist-attack-on-uk-synagogue-leaves-2-dead-wounds-4/', source:'FDD' },
+    { country:'UK', cat:'INTEL', title:'Gripande efter cyberattack – flygplatser', place:'Heathrow/London (UK)', date:'2025‑10‑01',
+      lat:51.47, lng:-0.454,
+      summary:'Man gripen i West Sussex efter attack mot MUSE-system; stora störningar.',
+      url:'https://apnews.com/article/airports-cyberattack-brussels-heathrow-941e5bfe2bc2a327aeabd9a3095f1426', source:'AP' },
+    { country:'UK', cat:'DRONE', title:'Windsor – drönarbrott under statsbesök', place:'Windsor (UK)', date:'2025‑09‑16/18',
+      lat:51.483, lng:-0.604,
+      summary:'Sex gripna; separata domar för drönarsmuggling till fängelser.',
+      url:'https://abcnews.go.com/International/wireStory/man-arrested-after-drone-breaches-airspace-restrictions-windsor-125626653', source:'ABC' },
+
+    // --- POLEN / LITAUEN / TYSKLAND ---
+    { country:'PL', cat:'TERROR', title:'GRU‑plan: drönare + sprängämnen i “majsburkar”', place:'Polen/Litauen/Tyskland', date:'2025‑10‑02',
+      lat:52.229, lng:21.012, // Warszawa som fokus
+      summary:'Gripanden i PL; mål även i LT/DE enl. uppgifter; beslag av burkar, drönarkomponenter, SIM.',
+      url:'https://euromaidanpress.com/2025/10/02/explosives-in-corn-cans-russias-plot-to-strike-poland-lithuania-and-germany-revealed/', source:'Euromaidan Press' },
+
+    // --- SERBIEN ---
+    { country:'RS', cat:'HYBRID', title:'Hatbrott i FR/DE – 11 gripna i Serbien', place:'Belgrad (RS)', date:'2025‑09‑29',
+      lat:44.787, lng:20.449,
+      summary:'Kopplingar till möjliga påverkansoperationer; utreds i Frankrike.',
+      url:'https://www.reuters.com/world/serbia-arrests-11-placing-pig-heads-outside-mosques-france-2025-09-29/', source:'Reuters' },
+
+    // --- MOLDAVIEN ---
+    { country:'MD', cat:'HYBRID', title:'Pro‑EU‑parti vinner – rysk påverkan i valet', place:'Chisinau (MD)', date:'2025‑09‑28',
+      lat:47.01, lng:28.86,
+      summary:'PAS vinner; rapporter om desinformation, cyberattacker och bombhot.',
+      url:'https://www.reuters.com/world/europe/moldovas-pro-eu-government-edges-towards-majority-pivotal-vote-2025-09-28/', source:'Reuters' },
+
+    // --- KANADA ---
+    { country:'CA', cat:'LEGAL', title:'Kanada terrorlistar Bishnoi‑gänget', place:'Ottawa (CA)', date:'2025‑09‑30',
+      lat:45.421, lng:-75.697,
+      summary:'Gör stöd olagligt; tillgångar kan frysas; gänget leds av Lawrence Bishnoi.',
+      url:'https://www.canada.ca/en/public-safety-canada/news/2025/09/government-of-canada-lists-the-bishnoi-gang-as-a-terrorist-entity.html', source:'Gov. of Canada' },
+
+    // --- USA ---
+    { country:'US', cat:'MIL', title:'Trump & Hegseth – nya militära krav', place:'Quantico, VA (US)', date:'2025‑10‑01',
+      lat:38.522, lng:-77.305,
+      summary:'Hårdare fysiska krav, förbud mot skägg, bort med DEI-program m.m.',
+      url:'https://www.firstpost.com/world/fat-troops-woke-standards-what-trump-doesnt-want-in-americas-generals-13938431.html', source:'Firstpost' },
+    { country:'US', cat:'TERROR', title:'Före detta nationalgardist åtalas (AQ‑stöd)', place:'Oklahoma City, OK (US)', date:'2025‑10‑01',
+      lat:35.467, lng:-97.516,
+      summary:'Försökte skicka 3D‑printade vapendelar och autokonverteringsdelar till “AQ”.',
+      url:'https://www.jpost.com/international/islamic-terrorism/article-869306', source:'Jerusalem Post' },
+
+    // --- VENEZUELA ---
+    { country:'VE', cat:'MIL', title:'Miliser mobiliseras – USA förstärker i Karibien', place:'Caracas (VE)', date:'2025‑09‑22',
+      lat:10.480, lng:-66.903,
+      summary:'USA med flottstyrkor/F‑35 i regionen; Venezuela tränar civila miliser.',
+      url:'https://www.reuters.com/pictures/pictures-venezuelan-military-trains-civilians-amid-us-tensions-2025-09-22/', source:'Reuters' },
+
+    // --- UKRAINA ---
+    { country:'UA', cat:'TERROR', title:'SBU stoppar rysk “dejtfälla” i Lviv', place:'Lviv (UA)', date:'2025‑10‑01',
+      lat:49.839, lng:24.029,
+      summary:'Lockbeten via falska profiler; två soldater räddade; oklart om gripanden.',
+      url:'https://newsukraine.rbc.ua/news/russian-agents-used-fake-dating-profiles-1759317425.html', source:'RBC‑Ukraine' }
+  ];
+
+  // Build markers
+  const allMarkers = [];
+
+  function popupHtml(e){
+    const cat = CATS[e.cat] ? CATS[e.cat].label : e.cat;
+    return `
+      <div class="popup">
+        <h3>${e.title}</h3>
+        <div class="meta">${e.place} • ${e.date} • ${cat}</div>
+        <p>${e.summary}</p>
+        <p class="meta">Källa: <strong>${e.source || ''}</strong></p>
+        ${e.url ? `<p><a href="${e.url}" target="_blank" rel="noopener">Öppna källa</a></p>` : ''}
+      </div>
+    `;
+  }
+
+  events.forEach(e => {
+    const icon = makeIcon(e.cat);
+    const m = L.marker([e.lat, e.lng], { icon }).bindPopup(popupHtml(e));
+    m.addTo(layersByCat[e.cat]);
+    allMarkers.push(m);
+  });
+
+  // Add category layers to map and control
+  const overlays = {};
+  Object.entries(layersByCat).forEach(([key, layer]) => {
+    layer.addTo(map); // start with all visible
+    overlays[`${CATS[key].emoji} ${CATS[key].label}`] = layer;
+  });
+  L.control.layers(null, overlays, { collapsed: false, sortLayers: true }).addTo(map);
+
+  // Fit bounds to all markers
+  if (allMarkers.length) {
+    const group = L.featureGroup(allMarkers);
+    map.fitBounds(group.getBounds().pad(0.2));
+  }
+
+  // Build legend
+  const legendEl = document.getElementById('legend');
+  legendEl.innerHTML = `
+    <h4>Teckenförklaring</h4>
+    ${Object.entries(CATS).map(([k,v]) => `
+      <div class="row">
+        <span class="marker-emoji" style="background:${v.color}">${v.emoji}</span>
+        <div>${v.label}</div>
+      </div>
+    `).join('')}
+    <div class="row" style="margin-top:8px;">
+      <div></div>
+      <div style="font-size:12px; color:#555;">Klicka symboler för mer info • Använd lagerväljaren (uppe till höger) för att filtrera kategorier.</div>
+    </div>
+  `;
+
+  // Focus dropdown
+  const FOCUS = {
+    world: { center:[54.5, 10], zoom:5 },
+    se:    { center:[62.0, 16.0], zoom:4 },
+    no:    { center:[64.5, 11.0], zoom:4 },
+    dk:    { center:[56.0, 10.0], zoom:6 },
+    de:    { center:[51.2, 10.45], zoom:5 },
+    fi:    { center:[64.5, 26.0], zoom:4 },
+    nl:    { center:[52.3, 5.3], zoom:7 },
+    fr:    { center:[47.0, 2.0], zoom:5 },
+    at:    { center:[47.6, 14.1], zoom:6 },
+    uk:    { center:[53.5, -1.8], zoom:5 },
+    pl:    { center:[54.5, 18.0], zoom:5 },
+    md:    { center:[47.0, 28.7], zoom:7 },
+    rs:    { center:[44.0, 20.9], zoom:7 },
+    ua:    { center:[49.0, 31.0], zoom:5 },
+    ve:    { center:[9.5, -66.5], zoom:6 },
+    us:    { center:[39.8, -98.6], zoom:4 },
+  };
+  document.getElementById('focus-select').addEventListener('change', (e)=>{
+    const v = e.target.value;
+    const f = FOCUS[v] || FOCUS.world;
+    map.setView(f.center, f.zoom);
+  });
+
+  // Optional: click on empty map to show coords (debug)
+  // map.on('click', (e)=>{ L.popup().setLatLng(e.latlng).setContent(e.latlng.toString()).openOn(map); });
+</script>
+
+
+</body></html>
