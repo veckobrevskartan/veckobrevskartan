@@ -2,211 +2,80 @@
 <html lang="sv">
 <head>
   <meta charset="utf-8" />
-  <!-- Om något blockeras lokalt, kommentera CSP-raden nedan -->
-  <!-- <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: blob:; style-src 'self' 'unsafe-inline' https:; script-src 'self' 'unsafe-inline' https:; img-src * data: blob:; connect-src *;"> -->
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Veckobrev – Karta (permalänk + datum + felsökning)</title>
+  <title>Veckobrevskartan – ren</title>
 
-  <!-- Leaflet CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous" />
-  <!-- MarkerCluster CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" crossorigin="anonymous"/>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" crossorigin="anonymous"/>
+  <!-- Leaflet CSS (byt till lokalt /leaflet/leaflet.css vid GitHub Pages CSP) -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"  <!-- <-- byta till lokala filer vid behov -->
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""
+  />
 
   <style>
-    html, body { height: 100%; margin: 0; }
-    #map { height: 100vh; width: 100vw; }
-
-    .map-topbar {
-      position: absolute; z-index: 1000; top: 10px; left: 10px;
-      background: rgba(255,255,255,0.95); padding: 10px 12px; border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; font-size: 14px;
-      display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
-      max-width: min(94vw, 1100px);
+    html, body { height:100%; margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; }
+    #map { position:fixed; inset:0; }
+    .panel {
+      position: fixed; top: 10px; left: 10px; z-index: 5000;
+      background:#fff; padding:10px; border-radius:8px; box-shadow:0 2px 12px rgba(0,0,0,.15);
+      width: min(420px, 90vw);
     }
-
-    .legend {
-      position: absolute; z-index: 1000; bottom: 16px; left: 10px;
-      background: rgba(255,255,255,0.95); padding: 10px 12px; border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.15); max-width: 360px;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; font-size: 13px;
-    }
-    .legend .legend-header { display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none; }
-    .legend .legend-header h4 { margin:0; font-size:14px; }
-    .legend .toggle { width: 22px; height: 22px; display:inline-flex; align-items:center; justify-content:center;
-      border-radius: 6px; border:1px solid #ccc; background:#f6f6f6; }
-    .legend .hint { font-size:12px; color:#777; margin-left:auto; }
-    .legend .content { margin-top:8px; }
-    .legend.collapsed .content { display:none; }
-    .legend .row { display:grid; grid-template-columns: 22px 1fr; gap:8px; align-items:center; margin-bottom:6px; }
-
-    .marker-emoji {
-      width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center;
-      border-radius: 50%; color: #000; font-size: 16px; line-height: 1; box-shadow: 0 1px 4px rgba(0,0,0,0.3);
-      border: 1px solid rgba(0,0,0,0.15); padding: 4px; background: #fff;
-    }
-    .popup h3 { margin: 0 0 6px; font-size: 16px; }
-    .popup p { margin: 6px 0; }
-    .popup .meta { color: #444; font-size: 12px; }
-    .popup .actions { display:flex; gap:8px; margin-top:8px; }
-    .popup .actions button { padding:6px 10px; border-radius:8px; border:1px solid #ddd; background:#f6f6f6; cursor:pointer; }
-
-    .leaflet-control-layers-expanded { max-height: 60vh; overflow: auto; }
-
-    .search-results {
-      position: absolute; z-index: 999; top: 64px; left: 10px;
-      width: 420px; max-height: 52vh; overflow: auto;
-      background: rgba(255,255,255,0.98); border: 1px solid rgba(0,0,0,0.1);
-      border-radius: 12px; box-shadow: 0 6px 24px rgba(0,0,0,0.15);
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-      display: none;
-    }
-    .search-results header { display:flex; align-items:center; justify-content:space-between; gap:8px;
-      padding:8px 10px; border-bottom:1px solid #eee; position: sticky; top: 0; background: #fff; }
-    .search-results header .actions { display:flex; gap:8px; }
-    .search-results header button { padding:6px 10px; border-radius:8px; border:1px solid #ddd; background:#f6f6f6; cursor:pointer; }
-    .search-results .list { padding: 6px; }
-    .search-results .res { display:grid; grid-template-columns: 28px 1fr 26px; gap:10px; padding:8px; border-radius:10px; cursor:pointer; }
-    .search-results .res:hover { background:#f7f7f7; }
-    .search-results .ico {
-      width:28px; height:28px; display:flex; align-items:center; justify-content:center;
-      border-radius:50%; border:1px solid rgba(0,0,0,0.12); background:#fff; box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-    }
-    .search-results .t { font-weight:600; font-size:14px; line-height:1.25; }
-    .search-results .m { color:#555; font-size:12px; margin-top:2px; }
-    .search-results .s { color:#777; font-size:11px; margin-top:2px; }
-    .search-results .share { display:flex; align-items:center; justify-content:center; opacity:0.75; }
-    .search-results .share:hover { opacity:1; }
-    .search-results .empty { padding:12px; color:#666; font-size:13px; }
-
-    .map-topbar input[type="search"] { max-width: min(42vw, 420px); }
-
-    .datebox { display:flex; gap:6px; align-items:center; }
-    .datebox input[type="date"] { padding:6px 8px; border:1px solid #ddd; border-radius:8px; }
-
-    #errbar {
-      position: fixed; z-index: 2000; left: 10px; right: 10px; bottom: 10px;
-      background: #ffefef; color: #b00020; border: 1px solid #f5b0b0; border-radius: 10px;
-      padding: 8px 12px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px;
-      display: none; white-space: pre-wrap;
-    }
-
-    @media (max-width: 768px) {
-      .map-topbar { left: 8px; top: 6px; padding: 8px 10px; gap: 6px; font-size: 13px; max-width: min(94vw, 520px); }
-      .legend { left: 8px; bottom: 8px; padding: 8px 10px; font-size: 12px; max-width: 80vw; }
-      .search-results { left: 8px; top: 58px; width: min(92vw, 460px); max-height: 50vh; }
-      .map-topbar input[type="search"] { max-width: 52vw; }
-      .datebox { width:100%; }
-    }
+    .row { display:flex; gap:6px; margin:6px 0; }
+    .row > input { flex:1 1 auto; padding:6px 8px; border:1px solid #ccc; border-radius:6px; }
+    .row > button { padding:6px 10px; border:1px solid #ccc; border-radius:6px; background:#f8f8f8; cursor:pointer; }
+    .legend { display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
+    .badge { font-size:12px; padding:2px 6px; border-radius:999px; border:1px solid #999; background:#fff }
+    .err { position:fixed; bottom:10px; left:10px; right:10px; z-index:5000; background:#fee; color:#900; padding:8px; border:1px solid #f99; border-radius:8px; display:none; }
   </style>
 </head>
 <body>
+  <div id="map" role="region" aria-label="Karta"></div>
 
-<div class="map-topbar">
-  <div>
-    <label for="focus-select"><strong>Fokusera karta:</strong></label>
-    <select id="focus-select">
-      <option value="world">Europa + Nordamerika</option>
-      <option value="se">Sverige</option><option value="no">Norge</option><option value="dk">Danmark</option>
-      <option value="de">Tyskland</option><option value="fi">Finland</option><option value="nl">Nederländerna</option>
-      <option value="fr">Frankrike</option><option value="at">Österrike</option><option value="uk">Storbritannien</option>
-      <option value="pl">Polen/Litauen/Tyskland</option><option value="md">Moldavien</option><option value="rs">Serbien</option>
-      <option value="ua">Ukraina</option><option value="ve">Venezuela</option><option value="us">USA</option>
-      <option value="be">Belgien</option><option value="cz">Tjeckien</option><option value="es">Spanien</option>
-      <option value="it">Italien</option><option value="tr">Turkiet</option><option value="ch">Schweiz</option>
-      <option value="lt">Litauen</option><option value="gr">Grekland</option><option value="ie">Irland</option>
-    </select>
+  <div class="panel" aria-label="Sök och filter">
+    <div class="row">
+      <input id="q" placeholder="Sök (text, landkod, kategori … ex: SE eller DRONE)" />
+    </div>
+    <div class="row">
+      <input id="from" type="date" />
+      <input id="to" type="date" />
+    </div>
+    <div class="row">
+      <button id="search">Sök</button>
+      <button id="clear">Nollställ</button>
+      <button id="zoomAll">Zooma alla</button>
+    </div>
+    <div class="legend" id="legend"></div>
   </div>
 
-  <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-    <input id="search-input" type="search" placeholder="Sök: t.ex. drönare, Karlskrona, cat:DRONE, country:SE" style="min-width:260px; padding:6px 8px; border:1px solid #ddd; border-radius:8px;" />
-    <div class="datebox">
-      <label for="from">Från</label><input id="from" type="date" />
-      <label for="to">Till</label><input id="to" type="date" />
-    </div>
-    <button id="search-btn" style="padding:6px 10px; border-radius:8px; border:1px solid #ddd; background:#f5f5f5; cursor:pointer;">Filtrera</button>
-    <button id="clear-btn"  style="padding:6px 10px; border-radius:8px; border:1px solid #ddd; background:#fff; cursor:pointer;">Rensa</button>
-    <span id="hits" style="color:#444; font-size:12px;"></span>
-  </div>
-</div>
+  <div class="err" id="err"></div>
 
-<div class="search-results" id="search-results">
-  <header>
-    <div id="res-title">Sökresultat</div>
-    <div class="actions">
-      <button id="res-zoom-all" title="Zooma till alla träffar">Zooma</button>
-      <button id="res-close" title="Stäng">Stäng</button>
-    </div>
-  </header>
-  <div class="list" id="res-list"></div>
-</div>
+  <!-- Leaflet JS (byt till lokalt /leaflet/leaflet.js vid GitHub Pages CSP) -->
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"  <!-- <-- byta till lokala filer vid behov -->
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="">
+  </script>
 
-<div id="map"></div>
-<div class="legend" id="legend"></div>
-<div id="errbar"></div>
+  <script>
+  /* ===================== Data ===================== */
 
-<!-- Leaflet JS -->
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
-<!-- MarkerCluster JS -->
-<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" crossorigin="anonymous"></script>
+  // Kategorier -> färger/etiketter
+  const CATS = {
+    DRONE:{ label:'Drönare', color:'#e74c3c' },
+    INFRA:{ label:'Infrastruktur', color:'#8e44ad' },
+    HYBRID:{ label:'Hybrid', color:'#2ecc71' },
+    TERROR:{ label:'Våld/Hot', color:'#c0392b' },
+    INTEL:{ label:'Underrättelse', color:'#2980b9' },
+    GPS:{ label:'GNSS', color:'#16a085' },
+    MIL:{ label:'Militärt', color:'#d35400' },
+    MAR:{ label:'Maritimt', color:'#34495e' },
+    LEGAL:{ label:'Rättsfall', color:'#7f8c8d' },
+    POLICY:{ label:'Policy', color:'#2c3e50' },
+    NUCLEAR:{ label:'Kärnrelaterat', color:'#f39c12' }
+  };
 
-<script>
-/* ====== Felvisare så sidan inte bara blir vit ====== */
-(function () {
-  const errbar = document.getElementById('errbar');
-  function showErr(msg) {
-    errbar.style.display = 'block';
-    errbar.textContent = 'Fel: ' + msg;
-    console.error(msg);
-  }
-  window.addEventListener('error', (e) => showErr(e.message || String(e)));
-  window.addEventListener('unhandledrejection', (e) => showErr(e.reason && e.reason.message ? e.reason.message : String(e.reason)));
-})();
-
-/* ====== Karta & tiles ====== */
-const isMobile = window.matchMedia('(max-width: 768px)').matches;
-const map = L.map('map', { worldCopyJump: true, zoomControl: !isMobile }).setView([54.5, 10], 5);
-if (isMobile) { L.control.zoom({ position: 'bottomright' }).addTo(map); map.scrollWheelZoom.disable(); }
-const tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19,
-  attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> bidragsgivare'
-}).addTo(map);
-tiles.on('tileerror', () => {
-  const b = document.getElementById('errbar');
-  b.style.display = 'block';
-  b.textContent = 'Obs: kunde inte ladda bakgrundskartan. Kontrollera internet/CSP.';
-});
-window.addEventListener('load', () => setTimeout(() => map.invalidateSize(), 0));
-
-/* ====== Kategorier ====== */
-const CATS = {
-  DRONE:{label:'Drönare / UAV',emoji:'🛩️',color:'#d0e6ff'},
-  INFRA:{label:'Infrastruktur / sabotage',emoji:'⚡',color:'#fff1b3'},
-  NUCLEAR:{label:'Kärnenergi / farligt gods',emoji:'☢️',color:'#ffe0e0'},
-  TERROR:{label:'Terror / våld',emoji:'💣',color:'#ffd6cc'},
-  INTEL:{label:'Spionage / underrättelse',emoji:'🕵️‍♂️',color:'#e6e6e6'},
-  LEGAL:{label:'Rättsfall / domar',emoji:'⚖️',color:'#e3ffe3'},
-  MIL:{label:'Militär / försvar',emoji:'🪖',color:'#e0f7f1'},
-  HYBRID:{label:'Påverkan / hybrid',emoji:'🧠',color:'#f0e6ff'},
-  MAR:{label:'Maritimt / skuggflotta',emoji:'⚓',color:'#e0f0ff'},
-  GPS:{label:'GPS-störning / signal',emoji:'📡',color:'#f5e6ff'},
-  POLICY:{label:'Politik / policy',emoji:'🏛️',color:'#f2ffe6'}
-};
-function makeClusterGroup(){
-  return L.markerClusterGroup({ showCoverageOnHover:false, spiderfyOnMaxZoom:true, spiderfyDistanceMultiplier:1.2,
-    disableClusteringAtZoom:8, maxClusterRadius:60, chunkedLoading:true });
-}
-const clustersByCat = {};
-Object.keys(CATS).forEach(k => clustersByCat[k] = makeClusterGroup());
-function makeIcon(catKey){
-  const {emoji, color} = CATS[catKey] || {emoji:'❓', color:'#eee'};
-  return L.divIcon({ className:'', html:`<span class="marker-emoji" style="background:${color}">${emoji}</span>`, iconSize:[26,26], iconAnchor:[13,13] });
-}
-
-/* ====== DATA: klistra in dina listor här ====== */
-const events = [
-   // Sverige
+  // *** KLISTRA IN DIN STORA LISTA HÄR (behåll array-namnet "events") ***
+  const events = [
+    // Sverige
   {country:'SE',cat:'HYBRID',title:'Misstänkta konton söker drönarpiloter i forum',place:'Sverige (online)',date:'2025-10-05',lat:59.334,lng:18.067,summary:'Nya, misstänkta Facebook-konton erbjuder betalning för flygningar nära skyddsobjekt, och de verkar veta vilka de ska rikta in sig på. Administratörer tar bort profiler varje vecka.',url:'https://www.sverigesradio.se/artikel/dronarpiloter-soks-upp-pa-facebook-for-att-spana-pa-skyddsobjekt',source:'Sveriges Radio (2025)'},
   {country:'SE',cat:'NUCLEAR',title:'Ryskt uranfartyg med motorhaveri utanför Blekinge',place:'31 km SO om Hasslö, Blekinge (SE)',date:'2025-09-29',lat:56.118,lng:15.585,summary:'Panamaflaggade Mikhail Dudin ligger för ankar efter motorhaveri; tidigare urantransporter till Seversk. Kustbevakning/Marinen informerade.',url:'https://www.sydostran.se/nyheter/ryskt-fartyg-med-motorhaveri-utanfor-blekinge-anvands-for-att-frakta-uran/',source:'Hultgren, 2025 / Sydöstran'},
   {country:'SE',cat:'DRONE',title:'Drönarlarm vid Ronneby flygplats',place:'Ronneby Airport (SE)',date:'2025-09-29',lat:56.266,lng:15.265,summary:'Misstänkt drönare. Plan vände mot Kalmar innan landning i Ronneby. Civil/militär flygplats (F 17).',url:'https://www.expressen.se/nyheter/expressen-direkt/?post=1ddb8d7c-0474-4d53-af33-f0cc6c69a7ed',source:'Expressen Direkt (2025)'},
@@ -497,301 +366,145 @@ const events = [
 {country:'NO',cat:'MAR',title:'LNG-tankern “Mulan” cirkulerade nära norsk infrastruktur',place:'Norska kusten (NO)',date:'2024-12-26 – 2025-01-04',lat:60.00,lng:3.00,summary:'LNG-fartyg byggt 2024 vid Jiangnan varv kopplat till Arctic LNG 2 cirkulerade i åtta dagar nära oljeplattformar och fiberkablar. Ägarled: Jovo → Nur Global Shipping → Plio Energy (USA-sanktionerat). Del av rysk skuggflotta.',url:'https://www.thebarentsobserver.com/news/sanctioned-shadow-fleet-gas-carrier-zigzags-between-norwegian-oil-platforms/422665',source:'The Barents Observer'},
   {country:'DE',cat:'MAR',title:'Oljetankern “Eventin” tappade styrförmågan nära Rügen',place:'Östersjön, nära Rügen (DE)',date:'2025-01-10',lat:54.35,lng:14.00,summary:'Panamaflaggad tanker med 99 000 ton rysk olja drev 14 km från Rügens kust efter motorhaveri. Bogserades bort av tyska räddningstjänster. Del av rysk skuggflotta med hög miljörisk.',url:'https://www.france24.com/en/live-news/20250111-germany-races-to-secure-stricken-russian-shadow-fleet-oil-tanker',source:'France24'},
 
-];
-
-/* ====== Hjälp ====== */
-const ALL_ITEMS = []; // [{ e, marker, key }]
-let overlaysControl = null;
-let CURRENT_RESULTS = [];
-
-const qInput    = document.getElementById('search-input');
-const fromInput = document.getElementById('from');
-const toInput   = document.getElementById('to');
-const hitsEl    = document.getElementById('hits');
-const resBox    = document.getElementById('search-results');
-const resList   = document.getElementById('res-list');
-const resTitle  = document.getElementById('res-title');
-const btnZoomAll= document.getElementById('res-zoom-all');
-
-function norm(v){ return (v || '').toString().toLowerCase(); }
-function esc(s){ return (s||'').toString().replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
-function eventKey(e){
-  if (e.id) return `ID::${e.id}`;
-  if (e.url && e.url.trim()) return `URL::${e.url.trim()}`;
-  return `TDP::${(e.title||'').trim()}|${(e.date||'').trim()}|${(e.place||'').trim()}`;
-}
-function inDateRange(d, after, before){
-  if (!d) return true;
-  const x = new Date(d);
-  if (after  && x < new Date(after))  return false;
-  if (before && x > new Date(before)) return false;
-  return true;
-}
-function parseQuery(q){
-  const parts = (q||'').trim().split(/\s+/);
-  const f = { text:[], cat:null, country:null, after:null, before:null };
-  for (const p of parts) {
-    const [k, ...rest] = p.split(':');
-    if (rest.length){
-      const val = rest.join(':'); const key = k.toLowerCase();
-      if (key === 'cat') f.cat = val.toUpperCase();
-      else if (key === 'country') f.country = val.toUpperCase();
-      else if (key === 'after') f.after = val;
-      else if (key === 'before') f.before = val;
-      else f.text.push(p);
-    } else if (p) f.text.push(p);
-  }
-  return f;
-}
-function matches(e, query, fromDate, toDate){
-  const f = parseQuery(query||'');
-  const after = f.after || fromDate || '';
-  const before = f.before || toDate || '';
-  if (f.cat){
-    const catKey = (e.cat||'').toUpperCase();
-    const catLabel = norm(CATS[e.cat]?.label);
-    if (catKey !== f.cat && !(catLabel||'').includes(norm(f.cat))) return false;
-  }
-  if (f.country && (e.country||'').toUpperCase() !== f.country) return false;
-  if (!inDateRange(e.date, after, before)) return false;
-  if (!f.text.length) return true;
-  const hay = norm([e.title, e.place, e.summary, e.source, e.cat, e.country, e.date].join(' | '));
-  return f.text.every(w => hay.includes(norm(w)));
-}
-function catEmoji(e){ const meta = CATS[e.cat]; return meta ? meta.emoji : '❓'; }
-function catLabel(e){ const meta = CATS[e.cat]; return meta ? meta.label : (e.cat || 'Okänd kategori'); }
-
-/* ====== Popup + delning ====== */
-function popupHtml(e){
-  const cat = CATS[e.cat] ? CATS[e.cat].label : e.cat;
-  const link = e.url ? `<p><a href="${e.url}" target="_blank" rel="noopener">Öppna källa</a></p>` : '';
-  const src = e.source ? `<p class="meta">Källa: <strong>${esc(e.source)}</strong></p>` : '';
-  const shareBtn = `<div class="actions">
-      <button data-share="${encodeURIComponent(eventKey(e))}" class="share-btn">Kopiera permalänk</button>
-    </div>`;
-  return `<div class="popup">
-    <h3>${esc(e.title)}</h3>
-    <div class="meta">${esc(e.place)} • ${esc(e.date)} • ${esc(cat)}</div>
-    <p>${esc(e.summary || '')}</p>
-    ${src}
-    ${link}
-    ${shareBtn}
-  </div>`;
-}
-
-/* ====== Indexering ====== */
-function mergeEvents(a, b){
-  const m = new Map();
-  [...(a||[]), ...(b||[])].forEach(ev => { const k = eventKey(ev); if (!m.has(k)) m.set(k, ev); });
-  return Array.from(m.values());
-}
-function indexEvents(data){
-  data.forEach(e => {
-    if (typeof e.lat !== 'number' || typeof e.lng !== 'number') return;
-    const marker = L.marker([e.lat, e.lng], { icon: makeIcon(e.cat) }).bindPopup(popupHtml(e));
-    (clustersByCat[e.cat] || clustersByCat.HYBRID).addLayer(marker);
-    ALL_ITEMS.push({ e, marker, key: eventKey(e) });
-  });
-}
-Object.keys(CATS).forEach(k => clustersByCat[k].addTo(map));
-L.control.layers(null, Object.fromEntries(Object.entries(CATS).map(([k,v])=>[[`${v.emoji} ${v.label}`],clustersByCat[k]])), { collapsed: isMobile }).addTo(map);
-
-/* ====== Sök/filtrera + resultatlista ====== */
-function renderResults(items, query){
-  const resBox = document.getElementById('search-results');
-  const resList= document.getElementById('res-list');
-  const resTitle= document.getElementById('res-title');
-
-  CURRENT_RESULTS = items || [];
-  if (!query && !fromInput.value && !toInput.value){
-    resBox.style.display = 'none'; resList.innerHTML = ''; return;
-  }
-  const MAX = 120;
-  const shown = CURRENT_RESULTS.slice(0, MAX);
-  resTitle.textContent = `Sökresultat (${CURRENT_RESULTS.length})`;
-  if (!shown.length){
-    resList.innerHTML = `<div class="empty">Inga träffar.</div>`;
-  } else {
-    resList.innerHTML = shown.map((it, idx) => {
-      const e = it.e;
-      const meta = `${esc(e.place)} • ${esc(e.date)} • ${esc(catLabel(e))}`;
-      const src  = e.source ? `Källa: ${esc(e.source)}` : '';
-      const keyEnc = encodeURIComponent(it.key);
-      return `
-        <div class="res" data-idx="${idx}" title="Flyg till händelse">
-          <div class="ico">${esc(catEmoji(e))}</div>
-          <div class="txt">
-            <div class="t">${esc(e.title)}</div>
-            <div class="m">${meta}</div>
-            <div class="s">${src}</div>
-          </div>
-          <a class="share" href="${makePermalink({id:keyEnc, q:qInput.value, from:fromInput.value, to:toInput.value})}" title="Kopiera permalänk" data-key="${keyEnc}">🔗</a>
-        </div>`;
-    }).join('');
-  }
-  resBox.style.display = 'block';
-}
-function applyFilter(query){
-  Object.values(clustersByCat).forEach(c => c.clearLayers());
-  const items = ALL_ITEMS.filter(it => matches(it.e, query, fromInput.value, toInput.value));
-  items.forEach(it => (clustersByCat[it.e.cat] || clustersByCat.HYBRID).addLayer(it.marker));
-  hitsEl.textContent = (query || fromInput.value || toInput.value) ? `Träffar: ${items.length}` : '';
-  if (items.length){
-    const fg = L.featureGroup(items.map(it => it.marker));
-    map.fitBounds(fg.getBounds().pad(0.2));
-    if (items.length === 1) setTimeout(() => items[0].marker.openPopup(), 250);
-  }
-  renderResults(items, query);
-  pushSearchState({ q: query, from: fromInput.value, to: toInput.value });
-  return items;
-}
-
-/* UI */
-document.getElementById('search-btn').addEventListener('click', ()=>applyFilter(qInput.value));
-document.getElementById('clear-btn').addEventListener('click', ()=>{
-  qInput.value=''; fromInput.value=''; toInput.value=''; applyFilter(''); document.getElementById('search-results').style.display='none'; hitsEl.textContent=''; pushSearchState({});
-});
-document.getElementById('res-zoom-all').addEventListener('click', ()=>{
-  if (!CURRENT_RESULTS.length) return;
-  const fg = L.featureGroup(CURRENT_RESULTS.map(it => it.marker));
-  map.fitBounds(fg.getBounds().pad(0.2));
-});
-document.getElementById('res-close').addEventListener('click', ()=>{ document.getElementById('search-results').style.display='none'; });
-let _t=null; qInput.addEventListener('input', ()=>{ clearTimeout(_t); _t=setTimeout(()=>applyFilter(qInput.value), 250); });
-[fromInput, toInput].forEach(el => el.addEventListener('change', ()=>applyFilter(qInput.value)));
-document.getElementById('res-list').addEventListener('click', (ev)=>{
-  const shareA = ev.target.closest('a.share');
-  if (shareA){ ev.preventDefault(); copyPermalink(shareA.getAttribute('href')); return; }
-  const row = ev.target.closest('.res'); if (!row) return;
-  const idx = Number(row.getAttribute('data-idx')); const it = CURRENT_RESULTS[idx]; if (!it) return;
-  map.setView(it.marker.getLatLng(), Math.max(map.getZoom(), 8), {animate:true});
-  setTimeout(()=>it.marker.openPopup(),250);
-});
-
-/* Legend */
-const legendEl = document.getElementById('legend');
-const LS_KEY='legendCollapsed';
-const initialCollapsed=(localStorage.getItem(LS_KEY)==='1')||isMobile;
-legendEl.classList.toggle('collapsed', initialCollapsed);
-legendEl.innerHTML = `
-  <div class="legend-header" id="legend-header" role="button" tabindex="0" aria-expanded="${!initialCollapsed}">
-    <span class="toggle" id="legend-toggle">${initialCollapsed?'+':'–'}</span>
-    <h4>Teckenförklaring</h4>
-    <span class="hint" id="legend-hint">${initialCollapsed?'Visa':'Dölj'}</span>
-  </div>
-  <div class="content" id="legend-content">
-    ${Object.entries(CATS).map(([k,v])=>`
-      <div class="row">
-        <span class="marker-emoji" style="background:${v.color}">${v.emoji}</span>
-        <div>${v.label}</div>
-      </div>
-    `).join('')}
-  </div>`;
-function setCollapsed(c){ legendEl.classList.toggle('collapsed', c); document.getElementById('legend-toggle').textContent=c?'+':'–'; document.getElementById('legend-hint').textContent=c?'Visa':'Dölj'; document.getElementById('legend-header').setAttribute('aria-expanded', String(!c)); localStorage.setItem(LS_KEY, c?'1':'0'); }
-document.getElementById('legend-header').addEventListener('click', ()=>setCollapsed(!legendEl.classList.contains('collapsed')));
-document.getElementById('legend-header').addEventListener('keydown',(e)=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); setCollapsed(!legendEl.classList.contains('collapsed')); }});
-
-/* Fokusväljare */
-const FOCUS = {
-  world:{center:[54.5,10],zoom:5}, se:{center:[62.0,16.0],zoom:5}, no:{center:[64.5,11.0],zoom:4},
-  dk:{center:[56.0,10.0],zoom:6}, de:{center:[51.2,10.45],zoom:5}, fi:{center:[64.5,26.0],zoom:4},
-  nl:{center:[52.3,5.3],zoom:7}, fr:{center:[47.0,2.0],zoom:5}, at:{center:[47.6,14.1],zoom:6},
-  uk:{center:[53.5,-1.8],zoom:5}, pl:{center:[54.5,18.0],zoom:5}, md:{center:[47.0,28.7],zoom:7},
-  rs:{center:[44.0,20.9],zoom:7}, ua:{center:[49.0,31.0],zoom:5}, ve:{center:[9.5,-66.5],zoom:6},
-  us:{center:[39.8,-98.6],zoom:4}, be:{center:[50.8,4.5],zoom:7}, cz:{center:[49.8,15.5],zoom:7},
-  es:{center:[41.4,-1.2],zoom:6}, it:{center:[42.6,12.6],zoom:5}, tr:{center:[39.0,35.0],zoom:5},
-  ch:{center:[46.8,8.2],zoom:7}, lt:{center:[55.2,24.2],zoom:6}, gr:{center:[39.1,22.9],zoom:6},
-  ie:{center:[53.2,-8.2],zoom:6}
-};
-document.getElementById('focus-select').addEventListener('change', (e)=>{
-  const v = e.target.value; const f = FOCUS[v] || FOCUS.world; map.setView(f.center, f.zoom);
-});
-
-/* Permalänkar */
-function makePermalink({id, q, from, to} = {}){
-  const url = new URL(window.location.href);
-  const p = url.searchParams;
-  ['id','q','from','to'].forEach(k => p.delete(k));
-  if (id) p.set('id', id);
-  if (q) p.set('q', q);
-  if (from) p.set('from', from);
-  if (to) p.set('to', to);
-  url.search = p.toString(); url.hash = '';
-  return url.toString();
-}
-function pushSearchState({q, from, to}){
-  const url = makePermalink({ q: q || '', from: from || '', to: to || '' });
-  window.history.replaceState({}, '', url);
-}
-async function copyPermalink(url){ try{ await navigator.clipboard.writeText(url); alert('Permalänk kopierad.'); } catch{ prompt('Kopiera permalänk:', url); } }
-map.on('popupopen', (ev) => {
-  const it = ALL_ITEMS.find(x => x.marker === ev.popup._source);
-  if (it){
-    const keyEnc = encodeURIComponent(it.key);
-    const url = makePermalink({ id: keyEnc, q: qInput.value || '', from: fromInput.value || '', to: toInput.value || '' });
-    window.history.replaceState({}, '', url);
-  }
-  const tmp = document.createElement('div'); tmp.innerHTML = ev.popup.getContent();
-  const btn = tmp.querySelector('button.share-btn');
-  if (btn){
-    const key = btn.getAttribute('data-share');
-    btn.addEventListener('click', () => copyPermalink(makePermalink({ id: key, q: qInput.value || '', from: fromInput.value || '', to: toInput.value || '' })));
-  }
-  ev.popup.setContent(tmp.innerHTML);
-});
-<script>
-/* Ladda från URL */
-function loadFromURL(){
-  const p = new URLSearchParams(window.location.search);
-  const q = p.get('q') || '';
-  const from = p.get('from') || '';
-  const to = p.get('to') || '';
-  const id = p.get('id');
-
-  if (q && typeof qInput !== 'undefined' && qInput) qInput.value = q;
-  if (from && typeof fromInput !== 'undefined' && fromInput) fromInput.value = from;
-  if (to && typeof toInput !== 'undefined' && toInput) toInput.value = to;
-
-  const items = applyFilter(q);
-  if (id){
-    const key = decodeURIComponent(id);
-    const it = ALL_ITEMS.find(x => x.key === key);
-    if (it){
-      map.setView(it.marker.getLatLng(), Math.max(map.getZoom(), 8), { animate: false });
-      setTimeout(() => it.marker.openPopup(), 200);
-    }
-  }
-}
-
-/* 🧰 Normalisera datum */
-function normalizeDate(val) {
-  const match = String(val || "").match(/\d{4}-\d{2}-\d{2}/);
-  return match ? match[0] : null;
-}
-
-/* Init */
-(function init(){
-  // slå ihop extra-listorna om de finns (undvik "already been declared")
-  const allExtra = [
-    ...(typeof additionalEvents !== 'undefined' ? additionalEvents : []),
-    ...(typeof moreEvents !== 'undefined' ? moreEvents : [])
   ];
 
-  const merged = mergeEvents(events, allExtra).map(e => ({
-    ...e,
-    date: normalizeDate(e.date)
-  }));
+  /* ===================== Hjälp-funktioner ===================== */
 
-  indexEvents(merged);
+  function normalizeDate(val){
+    // plocka första YYYY-MM-DD
+    const m = String(val||'').match(/\d{4}-\d{2}-\d{2}/);
+    return m ? m[0] : null;
+  }
 
-  if (Array.isArray(ALL_ITEMS) && ALL_ITEMS.length){
-    const fg = L.featureGroup(ALL_ITEMS.map(it => it.marker));
+  function colorFor(cat){
+    return (CATS[cat] && CATS[cat].color) || '#666';
+  }
+
+  function makeKey(e){
+    return `${e.country}|${e.cat}|${e.title}|${e.place}|${e.date}`;
+  }
+
+  /* ===================== Karta ===================== */
+
+  const map = L.map('map', { zoomControl:true }).setView([56.3, 14.8], 5);
+
+  // OSM tiles
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    attribution: '&copy; OpenStreetMap'
+  }).addTo(map);
+
+  const MARKERS = []; // {data, marker, key}
+  const errBar = document.getElementById('err');
+
+  function showErr(msg){ errBar.textContent = msg; errBar.style.display = 'block'; }
+  function hideErr(){ errBar.style.display = 'none'; }
+
+  // Indexera & lägg till markörer
+  function indexEvents(list){
+    MARKERS.length = 0;
+    list.forEach(e => {
+      if (typeof e.lat !== 'number' || typeof e.lng !== 'number') return;
+      const key = makeKey(e);
+      const marker = L.circleMarker([e.lat, e.lng], {
+        radius: 7, weight: 2, color: '#222', fillColor: colorFor(e.cat), fillOpacity: 0.9
+      });
+      const d = normalizeDate(e.date);
+      const catLbl = CATS[e.cat]?.label || e.cat;
+      const html =
+        `<b>${e.title}</b><br>`+
+        `${e.place} • ${e.country} • <i>${d ?? 'datum saknas'}</i><br>`+
+        `<span style="display:inline-block;margin:.25em 0;padding:.1em .4em;border:1px solid #999;border-radius:999px;">${catLbl}</span><br>`+
+        (e.summary ? `<div style="max-width:260px;margin:.3em 0">${e.summary}</div>` : '')+
+        (e.url ? `<a href="${e.url}" target="_blank" rel="noopener">Källa</a>` : '');
+      marker.bindPopup(html);
+      marker.addTo(map);
+      MARKERS.push({ data:e, marker, key });
+    });
+  }
+
+  /* ===================== Sök/Filter ===================== */
+
+  const qInput = document.getElementById('q');
+  const fromInput = document.getElementById('from');
+  const toInput = document.getElementById('to');
+  const searchBtn = document.getElementById('search');
+  const clearBtn = document.getElementById('clear');
+  const zoomAllBtn = document.getElementById('zoomAll');
+  const legendBox = document.getElementById('legend');
+
+  // Bygg legend
+  for (const [k,v] of Object.entries(CATS)){
+    const b = document.createElement('span');
+    b.className = 'badge';
+    b.style.borderColor = v.color;
+    b.textContent = v.label;
+    legendBox.appendChild(b);
+  }
+
+  function applyFilter(){
+    const q = (qInput.value||'').trim().toLowerCase();
+    const f = normalizeDate(fromInput.value);
+    const t = normalizeDate(toInput.value);
+
+    // filtrera + visa/dölj markörer
+    let first = true;
+    let bounds = L.latLngBounds();
+    MARKERS.forEach(it => {
+      const e = it.data;
+      const d = normalizeDate(e.date);
+      let ok = true;
+
+      if (q){
+        const hay = [
+          e.title, e.place, e.country, e.cat, e.summary, e.source
+        ].join(' ').toLowerCase();
+        ok = hay.includes(q);
+      }
+
+      if (ok && f && d && d < f) ok = false;
+      if (ok && t && d && d > t) ok = false;
+
+      if (ok){
+        it.marker.addTo(map);
+        bounds.extend(it.marker.getLatLng());
+        if (first){ first=false; }
+      } else {
+        it.marker.remove();
+      }
+    });
+
+    if (!first){ // vi hittade något
+      map.fitBounds(bounds.pad(0.2));
+    } else {
+      showErr('Inga träffar för det här filtret.');
+      setTimeout(hideErr, 2500);
+    }
+  }
+
+  searchBtn.addEventListener('click', applyFilter);
+  clearBtn.addEventListener('click', () => {
+    qInput.value = ''; fromInput.value = ''; toInput.value = '';
+    // visa alla igen
+    MARKERS.forEach(it => it.marker.addTo(map));
+  });
+  zoomAllBtn.addEventListener('click', () => {
+    const fg = L.featureGroup(MARKERS.map(it => it.marker));
+    map.fitBounds(fg.getBounds().pad(0.2));
+  });
+
+  /* ===================== Init ===================== */
+
+  // normalisera datum vid inladdning
+  const prepared = events.map(e => ({ ...e, date: normalizeDate(e.date) || e.date || null }));
+  indexEvents(prepared);
+
+  // zooma till alla
+  if (MARKERS.length){
+    const fg = L.featureGroup(MARKERS.map(it => it.marker));
     map.fitBounds(fg.getBounds().pad(0.2));
   }
 
-  loadFromURL();
-})();
-</script>
+  </script>
 </body>
 </html>
-
