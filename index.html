@@ -741,7 +741,7 @@ map.on('popupopen', (ev) => {
   }
   ev.popup.setContent(tmp.innerHTML);
 });
-
+<script>
 /* Ladda från URL */
 function loadFromURL(){
   const p = new URLSearchParams(window.location.search);
@@ -750,9 +750,9 @@ function loadFromURL(){
   const to = p.get('to') || '';
   const id = p.get('id');
 
-  if (q) qInput.value = q;
-  if (from) fromInput.value = from;
-  if (to) toInput.value = to;
+  if (q && typeof qInput !== 'undefined' && qInput) qInput.value = q;
+  if (from && typeof fromInput !== 'undefined' && fromInput) fromInput.value = from;
+  if (to && typeof toInput !== 'undefined' && toInput) toInput.value = to;
 
   const items = applyFilter(q);
   if (id){
@@ -765,13 +765,7 @@ function loadFromURL(){
   }
 }
 
-/* 🧰 Ny funktion – lägg in den här */
-function normalizeDate(val) {
-  const match = String(val || "").match(/\d{4}-\d{2}-\d{2}/);
-  return match ? match[0] : null;
-}
-
-/* 🧰 Normalisera datum (låt den ligga kvar) */
+/* 🧰 Normalisera datum */
 function normalizeDate(val) {
   const match = String(val || "").match(/\d{4}-\d{2}-\d{2}/);
   return match ? match[0] : null;
@@ -779,7 +773,7 @@ function normalizeDate(val) {
 
 /* Init */
 (function init(){
-  // slå ihop extra-listorna om de finns
+  // slå ihop extra-listorna om de finns (undvik "already been declared")
   const allExtra = [
     ...(typeof additionalEvents !== 'undefined' ? additionalEvents : []),
     ...(typeof moreEvents !== 'undefined' ? moreEvents : [])
@@ -792,20 +786,11 @@ function normalizeDate(val) {
 
   indexEvents(merged);
 
-  if (ALL_ITEMS && ALL_ITEMS.length){
+  if (Array.isArray(ALL_ITEMS) && ALL_ITEMS.length){
     const fg = L.featureGroup(ALL_ITEMS.map(it => it.marker));
     map.fitBounds(fg.getBounds().pad(0.2));
   }
 
-  loadFromURL();
-})();
-
-
-  indexEvents(merged);
-  if (ALL_ITEMS.length){
-    const fg = L.featureGroup(ALL_ITEMS.map(it => it.marker));
-    map.fitBounds(fg.getBounds().pad(0.2));
-  }
   loadFromURL();
 })();
 </script>
