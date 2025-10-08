@@ -287,7 +287,7 @@ const events = [
   {country:'BE',cat:'DRONE',title:'Okända drönare över militärbas',place:'Elsenborn, Belgien',date:'2025-10-03',lat:50.473,lng:6.206,summary:'Flera okända drönare observerades natten till 3 oktober över det belgiska militärövningsområdet Elsenborn nära tysk-belgiska gränsen. Enligt försvarsdepartementet rör det sig om omkring femton farkoster, varav några kan ha korsat in i Tyskland. Händelsen utreds och inga misstänkta har identifierats.',url:'https://www.euronews.com/2025/10/03/drones-detected-flying-over-military-base-in-eastern-belgium-reports-say',source:'Euronews'},
   {country:'SE',cat:'DRONE',title:'Två misstänkta för drönarflygning vid Gärdet',place:'Gärdet, Stockholm',date:'2025-10-05',lat:59.345,lng:18.102,summary:'Polisen identifierade den 5 oktober två personer som flugit drönare i ett restriktionsområde på Gärdet i centrala Stockholm. De misstänks för brott mot luftfartslagen.',url:'https://www.aftonbladet.se/nyheter/a/Rr77qd/aftonbladet-direkt?pinnedEntry=1410839',source:'Aftonbladet'}];
 // === NYA HÄNDELSER FRÅN ANVÄNDAREN (alla batcher, inkl. senaste tilläggen) ===
-const additionalEvents = [
+const moreEvents = [
   // Sverige (batch 1)
   {country:'SE',cat:'INFRA',title:'Man åtalas för sabotage mot mobilmast',place:'Växjö (SE)',date:'2025-09-18',lat:56.878,lng:14.809,summary:'45-åring åtalas efter att ha skruvat loss jordlina på mobilmast; erkänner motiv att “minska frekvensen”. Polisen utreder ~30 liknande sabotage längs E22.',url:'https://www.sverigesradio.se/artikel/ville-minska-frekvensen-man-erkanner-sabotage-mot-mobilmast',source:'Sveriges Radio'},
   {country:'SE',cat:'POLICY',title:'SR avbryter samarbete med Gaza-frilans',place:'Stockholm (SE)',date:'2025-09-21',lat:59.334,lng:18.067,summary:'Sveriges Radio avslutar samarbetet med Baraa Lafi efter uppgifter om bojkottkampanjer; bristande bakgrundskontroll medges.',url:'https://doku.nu/2025/09/21/sr-journalist-ledde-bojkotter-mot-sionistiska-fienden/',source:'Doku (2025-09-21)'},
@@ -771,13 +771,35 @@ function normalizeDate(val) {
   return match ? match[0] : null;
 }
 
+/* 🧰 Normalisera datum (låt den ligga kvar) */
+function normalizeDate(val) {
+  const match = String(val || "").match(/\d{4}-\d{2}-\d{2}/);
+  return match ? match[0] : null;
+}
+
 /* Init */
 (function init(){
-  // ✅ Lägg till normalisering här
-  const merged = mergeEvents(events, additionalEvents).map(e => ({
+  // slå ihop extra-listorna om de finns
+  const allExtra = [
+    ...(typeof additionalEvents !== 'undefined' ? additionalEvents : []),
+    ...(typeof moreEvents !== 'undefined' ? moreEvents : [])
+  ];
+
+  const merged = mergeEvents(events, allExtra).map(e => ({
     ...e,
     date: normalizeDate(e.date)
   }));
+
+  indexEvents(merged);
+
+  if (ALL_ITEMS && ALL_ITEMS.length){
+    const fg = L.featureGroup(ALL_ITEMS.map(it => it.marker));
+    map.fitBounds(fg.getBounds().pad(0.2));
+  }
+
+  loadFromURL();
+})();
+
 
   indexEvents(merged);
   if (ALL_ITEMS.length){
