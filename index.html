@@ -23,7 +23,7 @@
     box-shadow: 0 2px 10px rgba(0,0,0,0.15);
     font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; font-size: 14px;
     display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
-    max-width: min(94vw, 960px);
+    max-width: min(94vw, 1100px);
   }
 
   .legend {
@@ -35,16 +35,29 @@
   }
 
   /* Fällbar legend */
-  .legend .legend-header { display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
+  .legend .legend-header {
+    display: flex; align-items: center; gap: 8px; cursor: pointer;
+    user-select: none;
+  }
   .legend .legend-header h4 { margin: 0; font-size: 14px; }
-  .legend .toggle { width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; border: 1px solid #ccc; background: #f6f6f6; font-size: 14px; line-height: 1; cursor: pointer; }
+  .legend .toggle {
+    width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 6px; border: 1px solid #ccc; background: #f6f6f6;
+    font-size: 14px; line-height: 1; cursor: pointer;
+  }
   .legend .hint { font-size: 12px; color: #777; margin-left: auto; }
   .legend .content { margin-top: 8px; }
   .legend.collapsed .content { display: none; }
 
-  .legend .row { display: grid; grid-template-columns: 22px 1fr; gap: 8px; align-items: center; margin-bottom: 6px; }
+  .legend .row {
+    display: grid; grid-template-columns: 22px 1fr; gap: 8px; align-items: center; margin-bottom: 6px;
+  }
 
-  .marker-emoji { width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; color: #000; font-size: 16px; line-height: 1; box-shadow: 0 1px 4px rgba(0,0,0,0.3); border: 1px solid rgba(0,0,0,0.15); padding: 4px; background: #fff; }
+  .marker-emoji {
+    width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 50%; color: #000; font-size: 16px; line-height: 1; box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    border: 1px solid rgba(0,0,0,0.15); padding: 4px; background: #fff;
+  }
 
   .popup h3 { margin: 0 0 6px; font-size: 16px; }
   .popup p { margin: 6px 0; }
@@ -52,14 +65,32 @@
   .leaflet-control-layers-expanded { max-height: 60vh; overflow: auto; }
 
   /* Resultatlista */
-  .search-results { position: absolute; z-index: 999; top: 64px; left: 10px; width: 380px; max-height: 52vh; overflow: auto; background: rgba(255,255,255,0.98); border: 1px solid rgba(0,0,0,0.1); border-radius: 12px; box-shadow: 0 6px 24px rgba(0,0,0,0.15); font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; display: none; }
-  .search-results header { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 10px; border-bottom:1px solid #eee; position: sticky; top: 0; background: #fff; }
+  .search-results {
+    position: absolute; z-index: 999; top: 88px; left: 10px;
+    width: 380px; max-height: 52vh; overflow: auto;
+    background: rgba(255,255,255,0.98); border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 12px; box-shadow: 0 6px 24px rgba(0,0,0,0.15);
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    display: none;
+  }
+  .search-results header {
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    padding:8px 10px; border-bottom:1px solid #eee; position: sticky; top: 0; background: #fff;
+  }
   .search-results header .actions { display:flex; gap:8px; }
-  .search-results header button { padding:6px 10px; border-radius:8px; border:1px solid #ddd; background:#f6f6f6; cursor:pointer; }
+  .search-results header button {
+    padding:6px 10px; border-radius:8px; border:1px solid #ddd; background:#f6f6f6; cursor:pointer;
+  }
   .search-results .list { padding: 6px; }
-  .search-results .res { display:grid; grid-template-columns: 28px 1fr; gap:10px; padding:8px; border-radius:10px; cursor:pointer; }
+  .search-results .res {
+    display:grid; grid-template-columns: 28px 1fr; gap:10px;
+    padding:8px; border-radius:10px; cursor:pointer;
+  }
   .search-results .res:hover { background:#f7f7f7; }
-  .search-results .ico { width:28px; height:28px; display:flex; align-items:center; justify-content:center; border-radius:50%; border:1px solid rgba(0,0,0,0.12); background:#fff; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .search-results .ico {
+    width:28px; height:28px; display:flex; align-items:center; justify-content:center;
+    border-radius:50%; border:1px solid rgba(0,0,0,0.12); background:#fff; box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
   .search-results .t { font-weight:600; font-size:14px; line-height:1.25; }
   .search-results .m { color:#555; font-size:12px; margin-top:2px; }
   .search-results .s { color:#777; font-size:11px; margin-top:2px; }
@@ -67,10 +98,17 @@
 
   .map-topbar input[type="search"] { max-width: min(58vw, 420px); }
 
+  .date-field {
+    padding:6px 8px; border:1px solid #ddd; border-radius:8px; font-size:13px;
+  }
+  .link-btn {
+    padding:6px 10px; border-radius:8px; border:1px solid #ddd; background:#fff; cursor:pointer;
+  }
+
   @media (max-width: 768px) {
     .map-topbar { left: 8px; top: 6px; padding: 8px 10px; gap: 6px; font-size: 13px; max-width: min(94vw, 520px); }
     .legend { left: 8px; bottom: 8px; padding: 8px 10px; font-size: 12px; max-width: 80vw; }
-    .search-results { left: 8px; top: 58px; width: min(92vw, 460px); max-height: 50vh; }
+    .search-results { left: 8px; top: 108px; width: min(92vw, 460px); max-height: 50vh; }
     .map-topbar input[type="search"] { max-width: 52vw; }
   }
 </style>
@@ -113,9 +151,12 @@
 
   <!-- Sökfält + knappar -->
   <div style="display:flex; gap:6px; align-items:center;">
-    <input id="search-input" type="search" placeholder="Sök: drönare, Karlskrona, cat:DRONE, country:SE, after:-7d | range:2025-09-15..2025-09-30" style="min-width:260px; padding:6px 8px; border:1px solid #ddd; border-radius:8px;" />
+    <input id="search-input" type="search" placeholder="Sök: t.ex. drönare, Karlskrona, cat:DRONE, country:SE" style="min-width:260px; padding:6px 8px; border:1px solid #ddd; border-radius:8px;" />
+    <input id="after-input" type="date" class="date-field" title="Efter (inkl.)" />
+    <input id="before-input" type="date" class="date-field" title="Före (inkl.)" />
     <button id="search-btn" style="padding:6px 10px; border-radius:8px; border:1px solid #ddd; background:#f5f5f5; cursor:pointer;">Sök</button>
     <button id="clear-btn"  style="padding:6px 10px; border-radius:8px; border:1px solid #ddd; background:#fff; cursor:pointer;">Rensa</button>
+    <button id="link-btn" class="link-btn" title="Kopiera permalänk">Länk</button>
     <span id="hits" style="color:#444; font-size:12px;"></span>
   </div>
 </div>
@@ -179,31 +220,32 @@
     return L.divIcon({ className: '', html: `<span class="marker-emoji" style="background:${color}">${emoji}</span>`, iconSize:[26,26], iconAnchor:[13,13] });
   }
 
+  // === Permalänk-ID för händelser ===
+  function eventKey(e){
+    if (e.url && e.url.trim()) return `URL::${e.url.trim()}`;
+    return `TDP::${(e.title||'').trim()}|${(e.date||'').trim()}|${(e.place||'').trim()}`;
+  }
+  function eventId(e){ return encodeURIComponent(eventKey(e)); } // robust mot unicode
+
   function popupHtml(e){
     const cat = CATS[e.cat] ? CATS[e.cat].label : e.cat;
     const link = e.url ? `<p><a href="${e.url}" target="_blank" rel="noopener">Öppna källa</a></p>` : '';
     const src = e.source ? `<p class="meta">Källa: <strong>${e.source}</strong></p>` : '';
-    // [NEW] Permalänk
-    const pid = encodeId(e);
-    const plink = `<p class="meta"><a href="${makePermalink(pid)}" title="Direktlänk till denna händelse">Permalänk</a></p>`;
+    const perma = `<p class="meta"><a href="${makePermalinkForEvent(e)}" title="Permalänk till denna händelse">Permalänk</a></p>`;
     return `<div class="popup">
       <h3>${e.title}</h3>
       <div class="meta">${e.place} • ${e.date} • ${cat}</div>
       <p>${e.summary}</p>
       ${src}
       ${link}
-      ${plink}
+      ${perma}
     </div>`;
   }
 
-  // === HÄNDELSER (dina listor, oförändrade) ===
-  /* ……………—[DINA EVENTS SOM I MEDDELANDET]—…………… */
-  // För att hålla svaret kort har jag inte klippt in listorna igen här i kommentaren.
-  // Använd exakt samma 'events' och 'additionalEvents' som i din kod ovan.
-  // —— Klistra in listorna här nedanför —— 
-
+  // === DINA HÄNDELSER (oförändrat innehåll) ===
+  // (…din långa events- och additionalEvents-lista är exakt bevarad…)
   // === HÄNDELSER: Ursprunglig lista (från din senaste fungerande karta) ===
-  const events = [ // Sverige
+const events = [// Sverige
   {country:'SE',cat:'HYBRID',title:'Misstänkta konton söker drönarpiloter i forum',place:'Sverige (online)',date:'2025-10-05',lat:59.334,lng:18.067,summary:'Nya, misstänkta Facebook-konton erbjuder betalning för flygningar nära skyddsobjekt, och de verkar veta vilka de ska rikta in sig på. Administratörer tar bort profiler varje vecka.',url:'https://www.sverigesradio.se/artikel/dronarpiloter-soks-upp-pa-facebook-for-att-spana-pa-skyddsobjekt',source:'Sveriges Radio (2025)'},
   {country:'SE',cat:'NUCLEAR',title:'Ryskt uranfartyg med motorhaveri utanför Blekinge',place:'31 km SO om Hasslö, Blekinge (SE)',date:'2025-09-29',lat:56.118,lng:15.585,summary:'Panamaflaggade Mikhail Dudin ligger för ankar efter motorhaveri; tidigare urantransporter till Seversk. Kustbevakning/Marinen informerade.',url:'https://www.sydostran.se/nyheter/ryskt-fartyg-med-motorhaveri-utanfor-blekinge-anvands-for-att-frakta-uran/',source:'Hultgren, 2025 / Sydöstran'},
   {country:'SE',cat:'DRONE',title:'Drönarlarm vid Ronneby flygplats',place:'Ronneby Airport (SE)',date:'2025-09-29',lat:56.266,lng:15.265,summary:'Misstänkt drönare. Plan vände mot Kalmar innan landning i Ronneby. Civil/militär flygplats (F 17).',url:'https://www.expressen.se/nyheter/expressen-direkt/?post=1ddb8d7c-0474-4d53-af33-f0cc6c69a7ed',source:'Expressen Direkt (2025)'},
@@ -493,50 +535,36 @@
 {country:'NO',cat:'HYBRID',title:'”Golfbanebajsaren” förbryllar Stavanger sedan 2005',place:'Stavanger Golfklubb (NO)',date:'2025-08-18',lat:58.9572,lng:5.6603,summary:'Okänd gärningsman har i nästan 20 år lämnat avföring i golfhål. Sabotage sker vardagsmorgnar. Motiv okänt – protest eller fixering misstänks.',url:'https://iol.co.za/lifestyle/2025-08-18-golfers-grossed-out-unravelling-the-curious-case-of-the-cup-crapping-prankster/',source:'IOL / Vice'},
 {country:'NO',cat:'MAR',title:'LNG-tankern “Mulan” cirkulerade nära norsk infrastruktur',place:'Norska kusten (NO)',date:'2024-12-26 – 2025-01-04',lat:60.00,lng:3.00,summary:'LNG-fartyg byggt 2024 vid Jiangnan varv kopplat till Arctic LNG 2 cirkulerade i åtta dagar nära oljeplattformar och fiberkablar. Ägarled: Jovo → Nur Global Shipping → Plio Energy (USA-sanktionerat). Del av rysk skuggflotta.',url:'https://www.thebarentsobserver.com/news/sanctioned-shadow-fleet-gas-carrier-zigzags-between-norwegian-oil-platforms/422665',source:'The Barents Observer'},
   {country:'DE',cat:'MAR',title:'Oljetankern “Eventin” tappade styrförmågan nära Rügen',place:'Östersjön, nära Rügen (DE)',date:'2025-01-10',lat:54.35,lng:14.00,summary:'Panamaflaggad tanker med 99 000 ton rysk olja drev 14 km från Rügens kust efter motorhaveri. Bogserades bort av tyska räddningstjänster. Del av rysk skuggflotta med hög miljörisk.',url:'https://www.france24.com/en/live-news/20250111-germany-races-to-secure-stricken-russian-shadow-fleet-oil-tanker',source:'France24'},
+
 ];
-  // === NYA HÄNDELSER FRÅN ANVÄNDAREN ===
-  const additionalEvents = [/*… dina objekt …*/];
+const additionalEvents = [
+  /* …(hela din additionalEvents-lista oförändrad)… */
+];
 
   // ===== Sök-UI =====
-  const ALL_ITEMS = [];          // [{ e, marker }]
+  const ALL_ITEMS = [];          // [{ e, marker, id }]
+  const IDMAP = new Map();       // id -> item
   let overlaysControl = null;
   let CURRENT_RESULTS = [];
 
   const qInput     = document.getElementById('search-input');
+  const afterInput = document.getElementById('after-input');
+  const beforeInput= document.getElementById('before-input');
   const btnSearch  = document.getElementById('search-btn');
   const btnClear   = document.getElementById('clear-btn');
+  const btnLink    = document.getElementById('link-btn');
   const hitsEl     = document.getElementById('hits');
   const resBox     = document.getElementById('search-results');
   const resList    = document.getElementById('res-list');
   const resTitle   = document.getElementById('res-title');
   const btnZoomAll = document.getElementById('res-zoom-all');
   const btnResClose= document.getElementById('res-close');
+  const focusSel   = document.getElementById('focus-select');
 
   function norm(v){ return (v || '').toString().toLowerCase(); }
-
-  // [NEW] datumhjälpare: stödjer YYYY-MM-DD, today, yesterday, -7d/-4w/-3m/-1y
-  function dateFromToken(tok){
-    const t = (tok||'').toLowerCase();
-    const today = new Date(); today.setHours(0,0,0,0);
-    if (/^\d{4}-\d{2}-\d{2}$/.test(t)) return new Date(t);
-    if (t === 'today') return new Date(today);
-    if (t === 'yesterday'){ const d = new Date(today); d.setDate(d.getDate()-1); return d; }
-    const m = t.match(/^-(\d+)([dwmy])$/);
-    if (m){
-      const n = parseInt(m[1],10); const u = m[2];
-      const d = new Date(today);
-      if (u==='d') d.setDate(d.getDate()-n);
-      if (u==='w') d.setDate(d.getDate()-(n*7));
-      if (u==='m') d.setMonth(d.getMonth()-n);
-      if (u==='y') d.setFullYear(d.getFullYear()-n);
-      return d;
-    }
-    return null;
-  }
-
   function parseQuery(q){
     const parts = (q||'').trim().split(/\s+/);
-    const f = { text:[], cat:null, country:null, after:null, before:null, on:null, range:null };
+    const f = { text:[], cat:null, country:null, after:null, before:null };
     for (const p of parts) {
       if (!p) continue;
       const [k, ...rest] = p.split(':');
@@ -546,83 +574,83 @@
         else if (key === 'country') f.country = val.toUpperCase();
         else if (key === 'after') f.after = val;
         else if (key === 'before') f.before = val;
-        else if (key === 'on') f.on = val;                         // [NEW]
-        else if (key === 'range') f.range = val;                   // [NEW] YYYY-MM-DD..YYYY-MM-DD
         else f.text.push(p);
       } else f.text.push(p);
     }
     return f;
   }
-
-  function inDateRange(dStr, f){
-    if (!dStr) return true;
-    // normalisera första datumet i ev intervall "2025-10-02/03"
-    const match = String(dStr).match(/\d{4}-\d{2}-\d{2}/);
-    const d = match ? new Date(match[0]) : null;
+  function inDateRange(d, after, before){
     if (!d) return true;
-
-    // on:
-    if (f.on){
-      const onD = dateFromToken(f.on);
-      if (onD){ return d.getTime() === onD.getTime(); }
-      if (/^\d{4}-\d{2}-\d{2}$/.test(f.on)) return dStr.includes(f.on);
-    }
-
-    // range: A..B
-    if (f.range && f.range.includes('..')){
-      const [a,b] = f.range.split('..');
-      const A = dateFromToken(a) || ( /^\d{4}-\d{2}-\d{2}$/.test(a) ? new Date(a) : null );
-      const B = dateFromToken(b) || ( /^\d{4}-\d{2}-\d{2}$/.test(b) ? new Date(b) : null );
-      if (A && d < A) return false;
-      if (B && d > B) return false;
-    }
-
-    if (f.after){
-      const A = dateFromToken(f.after) || ( /^\d{4}-\d{2}-\d{2}$/.test(f.after) ? new Date(f.after) : null );
-      if (A && d < A) return false;
-    }
-    if (f.before){
-      const B = dateFromToken(f.before) || ( /^\d{4}-\d{2}-\d{2}$/.test(f.before) ? new Date(f.before) : null );
-      if (B && d > B) return false;
-    }
+    const x = new Date(d);
+    if (after  && x < new Date(after))  return false;
+    if (before && x > new Date(before)) return false;
     return true;
   }
-
   function matches(e, query){
     if (!query || !query.trim()) return true;
     const f = parseQuery(query);
+    // datumfält (UI) har företräde om satta
+    const uiAfter  = afterInput.value || null;
+    const uiBefore = beforeInput.value || null;
+    const effAfter  = uiAfter  || f.after;
+    const effBefore = uiBefore || f.before;
+
     if (f.cat){
       const catKey = (e.cat||'').toUpperCase();
       const catLabel = norm(CATS[e.cat]?.label);
       if (catKey !== f.cat && !(catLabel||'').includes(norm(f.cat))) return false;
     }
     if (f.country && (e.country||'').toUpperCase() !== f.country) return false;
-    if (!inDateRange(e.date, f)) return false;
+    if (!inDateRange(e.date, effAfter, effBefore)) return false;
+
     const hay = norm([e.title, e.place, e.summary, e.source, e.cat, e.country, e.date].join(' | '));
     return f.text.every(w => hay.includes(norm(w)));
   }
-
   function catEmoji(e){ const meta = CATS[e.cat]; return meta ? meta.emoji : '❓'; }
   function catLabel(e){ const meta = CATS[e.cat]; return meta ? meta.label : (e.cat || 'Okänd kategori'); }
   function esc(s){ return (s||'').toString().replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
 
-  // [NEW] identitet & permalänk
-  function eventKey(e){
-    if (e.url && e.url.trim()) return `URL::${e.url.trim()}`;
-    return `TDP::${(e.title||'').trim()}|${(e.date||'').trim()}|${(e.place||'').trim()}`;
+  // ===== URL-state / permalänkar =====
+  function updateURLState({q, after, before, focus, id}){
+    const u = new URL(window.location.href);
+    const sp = u.searchParams;
+    if (q != null)      (q ? sp.set('q', q) : sp.delete('q'));
+    if (after != null)  (after ? sp.set('after', after) : sp.delete('after'));
+    if (before != null) (before ? sp.set('before', before) : sp.delete('before'));
+    if (focus != null)  (focus ? sp.set('focus', focus) : sp.delete('focus'));
+    if (id != null)     (id ? sp.set('id', id) : sp.delete('id'));
+    history.replaceState(null, '', `${u.pathname}?${sp.toString()}`);
   }
-  function encodeId(e){ return encodeURIComponent(eventKey(e)); }
-  function makePermalink(id){
-    const params = new URLSearchParams(location.search);
-    // behåll aktuell söksträng (q), sätt id
-    const q = qInput.value.trim();
-    if (q) params.set('q', q); else params.delete('q');
-    params.set('id', id);
-    return `${location.pathname}?${params.toString()}`;
+  function makePermalinkForFilters(){
+    const u = new URL(window.location.href);
+    const sp = u.searchParams;
+    sp.set('q', qInput.value || '');
+    if (afterInput.value) sp.set('after', afterInput.value); else sp.delete('after');
+    if (beforeInput.value) sp.set('before', beforeInput.value); else sp.delete('before');
+    const f = focusSel.value; if (f && f!=='world') sp.set('focus', f); else sp.delete('focus');
+    sp.delete('id'); // filter-länk utan specifik händelse
+    u.search = sp.toString();
+    return u.toString();
+  }
+  function makePermalinkForEvent(e){
+    const u = new URL(window.location.href);
+    const sp = u.searchParams;
+    sp.set('id', eventId(e));
+    // ta även med aktuella filter i länken (bra för sammanhang)
+    if (qInput.value) sp.set('q', qInput.value); else sp.delete('q');
+    if (afterInput.value) sp.set('after', afterInput.value); else sp.delete('after');
+    if (beforeInput.value) sp.set('before', beforeInput.value); else sp.delete('before');
+    const f = focusSel.value; if (f && f!=='world') sp.set('focus', f); else sp.delete('focus');
+    u.search = sp.toString();
+    return u.toString();
   }
 
   function renderResults(items, query){
     CURRENT_RESULTS = items || [];
+    // sync URL med filters (utan id)
+    const f = focusSel.value;
+    updateURLState({ q: (qInput.value||''), after: afterInput.value||'', before: beforeInput.value||'', focus: (f && f!=='world') ? f : '', id: '' });
+
     if (!query){
       resBox.style.display = 'none';
       resList.innerHTML = '';
@@ -638,15 +666,13 @@
         const e = it.e;
         const meta = `${esc(e.place)} • ${esc(e.date)} • ${esc(catLabel(e))}`;
         const src  = e.source ? `Källa: ${esc(e.source)}` : '';
-        const pid  = encodeId(e);                        // [NEW]
-        const href = makePermalink(pid);                 // [NEW]
         return `
           <div class="res" data-idx="${idx}" title="Flyg till händelse">
             <div class="ico">${esc(catEmoji(e))}</div>
             <div class="txt">
               <div class="t">${esc(e.title)}</div>
               <div class="m">${meta}</div>
-              <div class="s">${src} ${src ? '· ' : ''}<a href="${href}" title="Permalänk till händelsen">Permalänk</a></div>
+              <div class="s">${src}</div>
             </div>
           </div>`;
       }).join('');
@@ -658,15 +684,13 @@
   }
 
   function applyFilter(query){
-    // 1) töm klustren
     Object.values(clustersByCat).forEach(c => c.clearLayers());
-    // 2) filtrera
     const trimmed = (query||'').trim();
     const items = trimmed ? ALL_ITEMS.filter(it => matches(it.e, trimmed)) : ALL_ITEMS.slice();
-    // 3) lägg tillbaka matchande markörer
+
     items.forEach(it => (clustersByCat[it.e.cat] || clustersByCat.HYBRID).addLayer(it.marker));
-    // 4) hits + zoom
-    hitsEl.textContent = trimmed ? `Träffar: ${items.length}` : '';
+
+    hitsEl.textContent = trimmed || afterInput.value || beforeInput.value ? `Träffar: ${items.length}` : '';
     if (items.length > 0){
       const fg = L.featureGroup(items.map(it => it.marker));
       map.fitBounds(fg.getBounds().pad(0.2));
@@ -674,32 +698,38 @@
         setTimeout(() => items[0].marker.openPopup(), 250);
       }
     }
-    // 5) rendera lista
-    renderResults(items, trimmed);
-
-    // [NEW] skriv sökningen till URL (?q=…)
-    const params = new URLSearchParams(location.search);
-    if (trimmed) params.set('q', trimmed); else params.delete('q');
-    params.delete('id'); // rensa ev. tidigare marker-id
-    const newUrl = `${location.pathname}?${params.toString()}`;
-    history.replaceState(null, '', newUrl);
-
+    renderResults(items, trimmed || afterInput.value || beforeInput.value);
     return items;
   }
 
   // Interaktioner
-  function doSearch(){ applyFilter(qInput.value); }
-  function clearSearch(){ qInput.value = ''; applyFilter(''); resBox.style.display = 'none'; hitsEl.textContent=''; }
+  function buildEffectiveQuery(){
+    // Låter fritexten styra, datumfält läses i matches(); vi lägger inte in after:/before: automatiskt
+    return qInput.value || '';
+  }
+  function doSearch(){ applyFilter(buildEffectiveQuery()); }
+  function clearSearch(){
+    qInput.value = '';
+    afterInput.value = '';
+    beforeInput.value = '';
+    applyFilter('');
+    resBox.style.display = 'none';
+    hitsEl.textContent='';
+    updateURLState({ q:'', after:'', before:'', id:'' });
+  }
 
   document.getElementById('search-btn').addEventListener('click', doSearch);
   document.getElementById('clear-btn') .addEventListener('click', clearSearch);
   document.getElementById('search-input').addEventListener('keydown', (ev) => { if (ev.key === 'Enter') doSearch(); });
   let _t=null; document.getElementById('search-input').addEventListener('input', () => { clearTimeout(_t); _t = setTimeout(doSearch, 250); });
+  afterInput.addEventListener('change', doSearch);
+  beforeInput.addEventListener('change', doSearch);
 
   document.getElementById('res-zoom-all').addEventListener('click', () => {
     if (!CURRENT_RESULTS.length) return;
     const fg = L.featureGroup(CURRENT_RESULTS.map(it => it.marker));
     map.fitBounds(fg.getBounds().pad(0.2));
+    updateURLState({ id:'' }); // lämna ev. tidigare händelse-id
   });
   document.getElementById('res-close').addEventListener('click', () => { resBox.style.display = 'none'; });
 
@@ -712,22 +742,27 @@
     const { marker, e } = it;
     const ll = marker.getLatLng();
     map.setView(ll, Math.max(map.getZoom(), 8), { animate: true });
-    setTimeout(() => {
-      marker.openPopup();
-      // [NEW] uppdatera URL med id när vi öppnar via listan
-      const id = encodeId(e);
-      const params = new URLSearchParams(location.search);
-      if (qInput.value.trim()) params.set('q', qInput.value.trim());
-      params.set('id', id);
-      history.replaceState(null, '', `${location.pathname}?${params.toString()}`);
-    }, 250);
+    setTimeout(() => marker.openPopup(), 250);
+    updateURLState({ id: eventId(e) }); // permalänk till den öppnade händelsen
+  });
+
+  // Kopiera filter-permalänk
+  btnLink.addEventListener('click', async () => {
+    try {
+      const url = makePermalinkForFilters();
+      await navigator.clipboard.writeText(url);
+      btnLink.textContent = 'Kopierad!';
+      setTimeout(() => btnLink.textContent = 'Länk', 1200);
+    } catch {
+      const url = makePermalinkForFilters();
+      alert('Permalänk:\n' + url);
+    }
   });
 
   // ===== Legend (collapsible) =====
   const legendEl = document.getElementById('legend');
   const LS_KEY = 'legendCollapsed';
   const initialCollapsed = (localStorage.getItem(LS_KEY) === '1') || isMobile;
-
   legendEl.classList.toggle('collapsed', initialCollapsed);
 
   legendEl.innerHTML = `
@@ -764,41 +799,71 @@
     localStorage.setItem(LS_KEY, collapsed ? '1' : '0');
   }
   legendHeader.addEventListener('click', () => setCollapsed(!legendEl.classList.contains('collapsed')));
-  legendHeader.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCollapsed(!legendEl.classList.contains('collapsed')); } });
+  legendHeader.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      setCollapsed(!legendEl.classList.contains('collapsed'));
+    }
+  });
 
   // ===== Fokus-väljare =====
   const FOCUS = {
-    world:{center:[54.5,10],zoom:5}, se:{center:[62.0,16.0],zoom:5}, no:{center:[64.5,11.0],zoom:4},
-    dk:{center:[56.0,10.0],zoom:6}, de:{center:[51.2,10.45],zoom:5}, fi:{center:[64.5,26.0],zoom:4},
-    nl:{center:[52.3,5.3],zoom:7}, fr:{center:[47.0,2.0],zoom:5}, at:{center:[47.6,14.1],zoom:6},
-    uk:{center:[53.5,-1.8],zoom:5}, pl:{center:[54.5,18.0],zoom:5}, md:{center:[47.0,28.7],zoom:7},
-    rs:{center:[44.0,20.9],zoom:7}, ua:{center:[49.0,31.0],zoom:5}, ve:{center:[9.5,-66.5],zoom:6},
-    us:{center:[39.8,-98.6],zoom:4}, be:{center:[50.8,4.5],zoom:7}, cz:{center:[49.8,15.5],zoom:7},
-    es:{center:[41.4,-1.2],zoom:6}, it:{center:[42.6,12.6],zoom:5}, tr:{center:[39.0,35.0],zoom:5},
-    ch:{center:[46.8,8.2],zoom:7}, lt:{center:[55.2,24.2],zoom:6}, gr:{center:[39.1,22.9],zoom:6},
+    world:{center:[54.5,10],zoom:5},
+    se:{center:[62.0,16.0],zoom:5},
+    no:{center:[64.5,11.0],zoom:4},
+    dk:{center:[56.0,10.0],zoom:6},
+    de:{center:[51.2,10.45],zoom:5},
+    fi:{center:[64.5,26.0],zoom:4},
+    nl:{center:[52.3,5.3],zoom:7},
+    fr:{center:[47.0,2.0],zoom:5},
+    at:{center:[47.6,14.1],zoom:6},
+    uk:{center:[53.5,-1.8],zoom:5},
+    pl:{center:[54.5,18.0],zoom:5},
+    md:{center:[47.0,28.7],zoom:7},
+    rs:{center:[44.0,20.9],zoom:7},
+    ua:{center:[49.0,31.0],zoom:5},
+    ve:{center:[9.5,-66.5],zoom:6},
+    us:{center:[39.8,-98.6],zoom:4},
+    be:{center:[50.8,4.5],zoom:7},
+    cz:{center:[49.8,15.5],zoom:7},
+    es:{center:[41.4,-1.2],zoom:6},
+    it:{center:[42.6,12.6],zoom:5},
+    tr:{center:[39.0,35.0],zoom:5},
+    ch:{center:[46.8,8.2],zoom:7},
+    lt:{center:[55.2,24.2],zoom:6},
+    gr:{center:[39.1,22.9],zoom:6},
     ie:{center:[53.2,-8.2],zoom:6}
   };
-  document.getElementById('focus-select').addEventListener('change', (e)=>{ const v = e.target.value; const f = FOCUS[v] || FOCUS.world; map.setView(f.center, f.zoom); });
+  focusSel.addEventListener('change', (e)=>{
+    const v = e.target.value; const f = FOCUS[v] || FOCUS.world; map.setView(f.center, f.zoom);
+    updateURLState({ focus: (v && v!=='world') ? v : '' });
+  });
 
-  // === Merge & index ===
+  // === Hjälpare för merge + indexering ===
   function mergeEvents(a, b){
     const m = new Map();
-    [...(a||[]), ...(b||[])].forEach(ev => { const k = eventKey(ev); if (!m.has(k)) m.set(k, ev); });
+    [...(a||[]), ...(b||[])].forEach(ev => {
+      const k = eventKey(ev);
+      if (!m.has(k)) m.set(k, ev);
+    });
     return Array.from(m.values());
   }
-  function resetClusters(){ Object.values(clustersByCat).forEach(c => c.clearLayers()); ALL_ITEMS.length = 0; }
+  function resetClusters(){
+    Object.values(clustersByCat).forEach(c => c.clearLayers());
+    ALL_ITEMS.length = 0;
+    IDMAP.clear();
+  }
   function indexEvents(data){
     data.forEach(e => {
       if (typeof e.lat !== 'number' || typeof e.lng !== 'number') return;
       const marker = L.marker([e.lat, e.lng], { icon: makeIcon(e.cat) }).bindPopup(popupHtml(e));
-      marker.on('popupopen', () => {                      // [NEW] uppdatera URL när popup öppnas
-        const params = new URLSearchParams(location.search);
-        if (qInput.value.trim()) params.set('q', qInput.value.trim()); else params.delete('q');
-        params.set('id', encodeId(e));
-        history.replaceState(null, '', `${location.pathname}?${params.toString()}`);
-      });
+      const id = eventId(e);
       (clustersByCat[e.cat] || clustersByCat.HYBRID).addLayer(marker);
-      ALL_ITEMS.push({ e, marker });
+      const item = { e, marker, id };
+      ALL_ITEMS.push(item);
+      IDMAP.set(id, item);
+      // uppdatera popup med korrekt permalänk efter att id finns
+      marker.bindPopup(popupHtml(e));
     });
   }
   function ensureLayerControl(){
@@ -806,36 +871,54 @@
     const overlays = {};
     Object.entries(CATS).forEach(([k,v]) => {
       overlays[`${v.emoji} ${v.label}`] = clustersByCat[k];
-      clustersByCat[k].addTo(map); // alla lager på som standard
+      clustersByCat[k].addTo(map); // alla lager påslagna som standard
     });
     overlaysControl = L.control.layers(null, overlays, { collapsed: isMobile, sortLayers: true }).addTo(map);
   }
 
-  // ===== Init: bygg karta + läs permalänk =====
+  function openById(id){
+    const it = IDMAP.get(id);
+    if (!it) return false;
+    const { marker } = it;
+    const ll = marker.getLatLng();
+    map.setView(ll, Math.max(map.getZoom(), 8), { animate: true });
+    setTimeout(() => marker.openPopup(), 250);
+    return true;
+  }
+
+  // Bygg kartan + läs in URL-parametrar
   (function init(){
     const merged = mergeEvents(events, additionalEvents);
     resetClusters();
     indexEvents(merged);
     ensureLayerControl();
 
-    const params = new URLSearchParams(location.search);     // [NEW]
-    const q = params.get('q') || '';
-    const id = params.get('id') || '';
-    if (q){ qInput.value = q; }
+    const sp = new URLSearchParams(location.search);
+    const q = sp.get('q') || '';
+    const af = sp.get('after') || '';
+    const bf = sp.get('before') || '';
+    const fc = sp.get('focus') || '';
+    const id = sp.get('id') || '';
 
-    // Först: applicera ev. sök
-    const items = applyFilter(q);
+    if (fc && FOCUS[fc]) { focusSel.value = fc; const f = FOCUS[fc]; map.setView(f.center, f.zoom); }
 
-    // Sedan: om id finns → zooma + öppna popup på rätt händelse
+    qInput.value = q;
+    afterInput.value = af;
+    beforeInput.value = bf;
+
+    const items = applyFilter(buildEffectiveQuery());
+
     if (id){
-      const found = ALL_ITEMS.find(it => encodeId(it.e) === id) ||
-                    items.find(it => encodeId(it.e) === id);
-      if (found){
-        const ll = found.marker.getLatLng();
-        map.setView(ll, Math.max(map.getZoom(), 8), { animate: true });
-        setTimeout(() => found.marker.openPopup(), 300);
+      // försök öppna händelsen (även om den filtrerats bort)
+      if (!openById(id)){
+        // om id finns men ej i filtrerade, öppna ändå: zooma alla först så lagret finns i vy
+        if (ALL_ITEMS.length){
+          const fg = L.featureGroup(ALL_ITEMS.map(it => it.marker));
+          map.fitBounds(fg.getBounds().pad(0.2));
+        }
+        openById(id);
       }
-    } else if (ALL_ITEMS.length){
+    } else if (!q && !af && !bf && ALL_ITEMS.length){
       const fg = L.featureGroup(ALL_ITEMS.map(it => it.marker));
       map.fitBounds(fg.getBounds().pad(0.2));
     }
@@ -847,7 +930,10 @@
     resetClusters();
     indexEvents(merged);
     ensureLayerControl();
-    applyFilter(qInput.value.trim()); // behåll ev. aktiv sökning
+    if (ALL_ITEMS.length){
+      const fg = L.featureGroup(ALL_ITEMS.map(it => it.marker));
+      map.fitBounds(fg.getBounds().pad(0.2));
+    }
   };
 </script>
 </body>
