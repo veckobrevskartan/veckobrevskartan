@@ -765,9 +765,20 @@ function loadFromURL(){
   }
 }
 
+/* 🧰 Ny funktion – lägg in den här */
+function normalizeDate(val) {
+  const match = String(val || "").match(/\d{4}-\d{2}-\d{2}/);
+  return match ? match[0] : null;
+}
+
 /* Init */
 (function init(){
-  const merged = mergeEvents(events, additionalEvents);
+  // ✅ Lägg till normalisering här
+  const merged = mergeEvents(events, additionalEvents).map(e => ({
+    ...e,
+    date: normalizeDate(e.date)
+  }));
+
   indexEvents(merged);
   if (ALL_ITEMS.length){
     const fg = L.featureGroup(ALL_ITEMS.map(it => it.marker));
@@ -778,3 +789,4 @@ function loadFromURL(){
 </script>
 </body>
 </html>
+
