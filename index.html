@@ -1,315 +1,169 @@
+
 <!doctype html>
 <html lang="sv">
 <head>
   <meta charset="utf-8" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: blob:; style-src 'self' 'unsafe-inline' https:; script-src 'self' 'unsafe-inline' https:; img-src * data: blob:; connect-src *;"/>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Veckobrev – Interaktiv händelsekarta</title>
+  <title>Veckobrev – Interaktiv händelsekarta (v3.1)</title>
 
-  <!-- Leaflet CSS -->
+  <!-- Leaflet + MarkerCluster CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous"/>
-
-  <!-- MarkerCluster CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" crossorigin="anonymous"/>
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" crossorigin="anonymous"/>
 
   <style>
-    html, body { height: 100%; margin: 0; }
-    #map { height: 100dvh; height: 100svh; height: 100vh; width: 100vw; }
-
-    .map-topbar {
-      position: absolute; z-index: 1000; top: 10px; left: 10px;
-      background: rgba(255,255,255,0.95); padding: 10px 12px; border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; font-size: 14px;
-      display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
-      max-width: min(94vw, 1100px);
+    :root{
+      --bg:#e9ecef; --panel:#ffffff; --fg:#222; --muted:#667; --accent:#0d6efd; --border:#d0d7de;
+      --chip:#eef2f7; --input:#fff; --shadow:0 6px 24px rgba(0,0,0,.1);
     }
+    *{box-sizing:border-box}
+    html, body { height: 100%; margin:0; background:var(--bg); color:var(--fg); font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif }
+    #app{ display:grid; grid-template-rows:auto 1fr; height:100vh; }
 
-    .legend {
-      position: absolute; z-index: 1000; bottom: 16px; left: 10px;
-      background: rgba(255,255,255,0.95); padding: 10px 12px; border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.15); max-width: 360px;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; font-size: 13px;
-      transition: max-height 0.3s ease;
+    /* Topbar */
+    .topbar{
+      position:sticky; top:0; z-index:1000; display:flex; align-items:center; gap:.5rem;
+      padding:.5rem .65rem; background:var(--panel); border-bottom:1px solid var(--border);
     }
+    .brand{ font-weight:700; color:#445; margin-right:.25rem }
+    .select{ background:var(--input); border:1px solid var(--border); border-radius:999px; padding:.35rem .6rem; }
+    .input{ display:flex; align-items:center; gap:.4rem; background:var(--input); border:1px solid var(--border); border-radius:999px; padding:.4rem .6rem; width:min(48vw,680px) }
+    .input input{ all:unset; width:100% }
+    .btn{ padding:.4rem .6rem; border:1px solid var(--border); border-radius:999px; background:var(--panel); cursor:pointer }
+    .btn:hover{ border-color:#b8c0c9 }
+    .chip{ display:none; background:var(--chip); border:1px solid var(--border); border-radius:999px; padding:.2rem .5rem; margin-left:.25rem; color:#445 }
+    .count{ color:#666 }
+    .spacer{ flex:1 }
 
-    .legend .legend-header { display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none; }
-    .legend .legend-header h4 { margin:0; font-size:14px; }
-    .legend .toggle { width:22px; height:22px; display:inline-flex; align-items:center; justify-content:center; border-radius:6px; border:1px solid #ccc; background:#f6f6f6; font-size:14px; line-height:1; cursor:pointer; }
-    .legend .hint { font-size:12px; color:#777; margin-left:auto; }
-    .legend .content { margin-top:8px; }
-    .legend.collapsed .content { display:none; }
+    /* Layout */
+    #main{ position:relative; height:calc(100vh - 54px); }
+    #map{ height:100%; width:100%; background:transparent }
 
-    .legend .row { display:grid; grid-template-columns:22px 1fr; gap:8px; align-items:center; margin-bottom:6px; }
-
-    .marker-emoji {
-      width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center;
-      border-radius: 50%; color: #000; font-size: 16px; line-height: 1; box-shadow: 0 1px 4px rgba(0,0,0,0.3);
-      border: 1px solid rgba(0,0,0,0.15); padding: 4px; background: #fff;
+    /* Results dropdown under search field */
+    .results{
+      position:absolute; left:.65rem; top:56px; width:min(520px, 92vw);
+      max-height:min(62vh, 680px); overflow:auto; background:#fff; border:1px solid var(--border); border-radius:12px;
+      box-shadow:var(--shadow); z-index:900; display:none;
     }
+    .results header{ position:sticky; top:0; background:#fff; border-bottom:1px solid var(--border); padding:.5rem .6rem; display:flex; gap:.4rem; align-items:center }
+    .results .items{ padding:.25rem 0 .5rem }
+    .item{ padding:.55rem .65rem; border-bottom:1px dashed #e5e9ef; cursor:pointer }
+    .item:last-child{ border-bottom:none }
+    .item h4{ margin:.1rem 0 .2rem; font-size:14px }
+    .item .meta{ color:#667; font-size:12px }
+    .item a{ color:var(--accent); text-decoration:none }
 
-    .popup h3 { margin: 0 0 6px; font-size: 16px; }
-    .popup p { margin: 6px 0; }
-    .popup .meta { color: #444; font-size: 12px; }
-    .leaflet-control-layers-expanded { max-height: 60vh; overflow: auto; }
-
-    /* Resultatlista */
-    .search-results {
-      position: absolute; z-index: 999; top: 88px; left: 10px;
-      width: 380px; max-height: 52vh; overflow: auto;
-      background: rgba(255,255,255,0.98); border: 1px solid rgba(0,0,0,0.1);
-      border-radius: 12px; box-shadow: 0 6px 24px rgba(0,0,0,0.15);
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-      display: none;
+    /* Collapsible category panel – top right */
+    details.catbox{
+      position:absolute; right:10px; top:10px; z-index:901; background:#fff; border:1px solid var(--border); border-radius:12px;
+      box-shadow:var(--shadow); width:min(340px, 92vw);
     }
-    .search-results header { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 10px; border-bottom:1px solid #eee; position: sticky; top: 0; background: #fff; }
-    .search-results header .actions { display:flex; gap:8px; }
-    .search-results header button { padding:6px 10px; border-radius:8px; border:1px solid #ddd; background:#f6f6f6; cursor:pointer; }
-    .search-results .list { padding: 6px; }
-    .search-results .res { display:grid; grid-template-columns: 28px 1fr; gap:10px; padding:8px; border-radius:10px; cursor:pointer; }
-    .search-results .res:hover { background:#f7f7f7; }
-    .search-results .ico { width:28px; height:28px; display:flex; align-items:center; justify-content:center; border-radius:50%; border:1px solid rgba(0,0,0,0.12); background:#fff; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-    .search-results .t { font-weight:600; font-size:14px; line-height:1.25; }
-    .search-results .m { color:#555; font-size:12px; margin-top:2px; }
-    .search-results .s { color:#777; font-size:11px; margin-top:2px; }
-    .search-results .empty { padding:12px; color:#666; font-size:13px; }
+    details.catbox > summary{
+      list-style:none; cursor:pointer; user-select:none; padding:.55rem .65rem; font-weight:700;
+      display:flex; align-items:center; gap:.4rem;
+    }
+    details.catbox[open] > summary{ border-bottom:1px solid var(--border); }
+    details.catbox .content{ padding:.5rem .6rem .6rem; max-height:55vh; overflow:auto; }
+    .catrow{ display:flex; align-items:center; gap:.4rem; padding:.2rem 0 }
+    .catrow label{ flex:1; display:flex; align-items:center; gap:.35rem }
+    .catrow .sw{ width:18px; height:18px }
+    .cat-actions{ display:flex; gap:.35rem; margin-top:.4rem }
 
-    .map-topbar input[type="search"] { max-width: min(58vw, 420px); }
+    /* Bottom-left collapsible legend */
+    .legend{
+      position:absolute; left:10px; bottom:10px; z-index:901;
+      background:#fff; border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow);
+      max-width:min(92vw, 420px);
+    }
+    .legend summary{ list-style:none; padding:.45rem .6rem; cursor:pointer; user-select:none; font-weight:600 }
+    .legend .content{ padding:.45rem .6rem; max-height:40vh; overflow:auto; }
+    .legend .row{ display:flex; gap:.5rem; padding:.2rem 0; border-left:2px solid #e5e9ef }
+    .legend .emoji{ min-width:1.25rem; text-align:center }
+    .legend .name{ font-weight:600 }
+    .legend .desc{ color:#667 }
 
-    .date-field { padding:6px 8px; border:1px solid #ddd; border-radius:8px; font-size:13px; }
-    .link-btn { padding:6px 10px; border-radius:8px; border:1px solid #ddd; background:#fff; cursor:pointer; }
+    .leaflet-control-attribution{ background:#fff8; border-radius:8px; padding:.15rem .35rem }
 
-    @media (max-width: 768px) {
-      .map-topbar { left: 8px; top: 6px; padding: 8px 10px; gap: 6px; font-size: 13px; max-width: min(94vw, 520px); }
-      .legend { left: 8px; bottom: 8px; padding: 8px 10px; font-size: 12px; max-width: 80vw; }
-      .search-results { left: 8px; top: 108px; width: min(92vw, 460px); max-height: 50vh; }
-      .map-topbar input[type="search"] { max-width: 52vw; }
+    @media (max-width: 980px){
+      details.catbox{ width:min(280px, 92vw) }
     }
   </style>
 </head>
 <body>
-
-<!-- Topprad -->
-<div class="map-topbar">
-  <div>
-    <label for="focus-select"><strong>Fokusera karta:</strong></label>
-    <select id="focus-select">
-      <option value="world">Europa + Nordamerika</option>
-      <option value="se">Sverige</option>
-      <option value="no">Norge</option>
-      <option value="dk">Danmark</option>
-      <option value="de">Tyskland</option>
-      <option value="fi">Finland</option>
-      <option value="nl">Nederländerna</option>
-      <option value="fr">Frankrike</option>
-      <option value="at">Österrike</option>
-      <option value="uk">Storbritannien</option>
-      <option value="pl">Polen/Litauen/Tyskland</option>
-      <option value="md">Moldavien</option>
-      <option value="rs">Serbien</option>
-      <option value="ua">Ukraina</option>
-      <option value="ve">Venezuela</option>
-      <option value="us">USA</option>
-      <option value="be">Belgien</option>
-      <option value="cz">Tjeckien</option>
-      <option value="es">Spanien</option>
-      <option value="it">Italien</option>
-      <option value="tr">Turkiet</option>
-      <option value="ch">Schweiz</option>
-      <option value="lt">Litauen</option>
-      <option value="gr">Grekland</option>
-      <option value="ie">Irland</option>
+<div id="app">
+  <div class="topbar">
+    <div class="brand">Händelsekarta</div>
+    <select id="focus" class="select" title="Fokus (land)">
+      <option value="">Alla länder</option>
+      <option value="SE">🇸🇪 Sverige</option>
+      <option value="NO">🇳🇴 Norge</option>
+      <option value="DK">🇩🇰 Danmark</option>
+      <option value="FI">🇫🇮 Finland</option>
+      <option value="DE">🇩🇪 Tyskland</option>
+      <option value="PL">🇵🇱 Polen</option>
+      <option value="UA">🇺🇦 Ukraina</option>
+      <option value="EU">🇪🇺 Europa</option>
     </select>
+
+    <label class="input" title="Fritext och/eller datumintervall, t.ex. 2025.08.01.-2025.09.01. | prefixes: cat:, country:, city:">
+      🔎
+      <input id="q" placeholder='Sök (fraser i "…", cat:DRONE, city:Göteborg, 2025.08.01.-2025.09.01.)' spellcheck="false" autocomplete="off"/>
+    </label>
+    <button id="searchBtn" class="btn" title="Sök">Sök</button>
+    <button id="clearBtn" class="btn" title="Rensa sökfältet">Rensa</button>
+    <button id="copylink" class="btn" title="Kopiera permalänk">Länk</button>
+    <span id="datesChip" class="chip"></span>
+    <span id="count" class="count"></span>
+    <div class="spacer"></div>
   </div>
 
-  <!-- Sökfält + knappar -->
-  <div style="display:flex; gap:6px; align-items:center;">
-    <input id="search-input" type="search" placeholder="Sök: t.ex. drönare, Karlskrona, cat:DRONE, country:SE" style="min-width:260px; padding:6px 8px; border:1px solid #ddd; border-radius:8px;" />
-    <input id="after-input" type="date" class="date-field" title="Efter (inkl.)" />
-    <input id="before-input" type="date" class="date-field" title="Före (inkl.)" />
-    <button id="search-btn" style="padding:6px 10px; border-radius:8px; border:1px solid #ddd; background:#f5f5f5; cursor:pointer;">Sök</button>
-    <button id="clear-btn"  style="padding:6px 10px; border-radius:8px; border:1px solid #ddd; background:#fff; cursor:pointer;">Rensa</button>
-    <button id="link-btn" class="link-btn" title="Kopiera permalänk">Länk</button>
-    <span id="hits" style="color:#444; font-size:12px;"></span>
-  </div>
-</div>
+  <div id="main">
+    <div id="map" role="region" aria-label="Interaktiv karta"></div>
 
-<!-- Resultatlista -->
-<div class="search-results" id="search-results">
-  <header>
-    <div id="res-title">Sökresultat</div>
-    <div class="actions">
-      <button id="res-zoom-all" title="Zooma till alla träffar">Zooma</button>
-      <button id="res-close" title="Stäng">Stäng</button>
+    <!-- Results dropdown -->
+    <div id="results" class="results" aria-live="polite">
+      <header>
+        <strong id="resTitle">Sökresultat</strong>
+        <span id="resCount" class="count"></span>
+        <span class="spacer"></span>
+        <button id="zoomAll" class="btn" title="Zooma till alla">Zooma</button>
+        <button id="closeResults" class="btn" title="Stäng">Stäng</button>
+      </header>
+      <div id="list" class="items"></div>
     </div>
-  </header>
-  <div class="list" id="res-list"></div>
+
+    <!-- Collapsible Category panel (top-right) -->
+    <details id="catbox" class="catbox">
+      <summary>📂 Kategorier</summary>
+      <div class="content">
+        <div id="cats"></div>
+        <div class="cat-actions">
+          <button id="catsAll" class="btn">Välj alla</button>
+          <button id="catsNone" class="btn">Avmarkera alla</button>
+          <button id="catsOnly" class="btn" title="Single-select nästa klick">Single</button>
+        </div>
+      </div>
+    </details>
+
+    <!-- Legend bottom-left -->
+    <details id="legend" class="legend">
+      <summary>➕ Teckenförklaring</summary>
+      <div class="content" id="catsExplain"></div>
+    </details>
+  </div>
 </div>
 
-<div id="map"></div>
-<div class="legend" id="legend"></div>
-
-<!-- Leaflet JS -->
+<!-- Leaflet + plugins -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
-<!-- MarkerCluster JS -->
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" crossorigin="anonymous"></script>
 
 <script>
-  // ===== KARTA & BAS =====
-  const isMobile = window.matchMedia('(max-width: 768px)').matches;
-  const map = L.map('map', { worldCopyJump: true, zoomControl: !isMobile }).setView([54.5, 10], 5);
-  if (isMobile) { L.control.zoom({ position: 'bottomright' }).addTo(map); map.scrollWheelZoom.disable(); }
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> bidragsgivare'
-  }).addTo(map);
-
-  // ===== KATEGORIER =====
-  const CATS = {
-    DRONE:   { label: 'Drönare / UAV',            emoji: '🛩️', color: '#d0e6ff' },
-    INFRA:   { label: 'Infrastruktur / sabotage', emoji: '⚡',  color: '#fff1b3' },
-    NUCLEAR: { label: 'Kärnenergi / farligt gods',emoji: '☢️', color: '#ffe0e0' },
-    TERROR:  { label: 'Terror / våld',            emoji: '💣',  color: '#ffd6cc' },
-    INTEL:   { label: 'Spionage / underrättelse', emoji: '🕵️‍♂️', color: '#e6e6e6' },
-    LEGAL:   { label: 'Rättsfall / domar',        emoji: '⚖️',  color: '#e3ffe3' },
-    MIL:     { label: 'Militär / försvar',        emoji: '🪖',  color: '#e0f7f1' },
-    HYBRID:  { label: 'Påverkan / hybrid',        emoji: '🧠',  color: '#f0e6ff' },
-    MAR:     { label: 'Maritimt / skuggflotta',   emoji: '⚓',  color: '#e0f0ff' },
-    GPS:     { label: 'GPS-störning / signal',    emoji: '📡',  color: '#f5e6ff' },
-    POLICY:  { label: 'Politik / policy',         emoji: '🏛️', color: '#f2ffe6' }
-  };
-
-  function makeClusterGroup(){
-    return L.markerClusterGroup({
-      showCoverageOnHover:false, spiderfyOnMaxZoom:true, spiderfyDistanceMultiplier:1.2,
-      disableClusteringAtZoom:8, maxClusterRadius:60, chunkedLoading:true
-    });
-  }
-  const clustersByCat = {};
-  Object.keys(CATS).forEach(k => clustersByCat[k] = makeClusterGroup());
-
-  function makeIcon(catKey){
-    const {emoji, color} = CATS[catKey] || {emoji:'❓', color:'#eee'};
-    return L.divIcon({ className: '', html: `<span class="marker-emoji" style="background:${color}">${emoji}</span>`, iconSize:[26,26], iconAnchor:[13,13] });
-  }
-
-  // === Permalänk-ID för händelser ===
-  function eventKey(e){
-    if (e.url && e.url.trim()) return `URL::${e.url.trim()}`;
-    return `TDP::${(e.title||'').trim()}|${(e.date||'').trim()}|${(e.place||'').trim()}`;
-  }
-  function eventId(e){ return encodeURIComponent(eventKey(e)); } // robust mot unicode
-
-  // === Datumtolkning och intervall ===
-  function parseDateRange(str) {
-    if (!str) return null;
-    const s = String(str);
-
-    const reFull = /\b(\d{4})-(\d{2})-(\d{2})\b/g;
-    const reYM   = /\b(\d{4})-(\d{2})\b/g;
-    const reY    = /\b(\d{4})\b/g;
-
-    const found = [];
-
-    for (const m of s.matchAll(reFull)) {
-      const d = new Date(`${m[1]}-${m[2]}-${m[3]}`);
-      if (!isNaN(d)) found.push({ start: d, end: d });
-    }
-    for (const m of s.matchAll(reYM)) {
-      const start = new Date(`${m[1]}-${m[2]}-01`);
-      if (!isNaN(start)) {
-        const end = new Date(start);
-        end.setMonth(end.getMonth() + 1, 0);
-        found.push({ start, end });
-      }
-    }
-    for (const m of s.matchAll(reY)) {
-      const year = Number(m[1]);
-      if (year >= 1900 && year <= 2100) {
-        const start = new Date(`${year}-01-01`);
-        const end   = new Date(`${year}-12-31`);
-        found.push({ start, end });
-      }
-    }
-    if (found.length === 0) return null;
-
-    let start = found[0].start, end = found[0].end;
-    for (const r of found) {
-      if (r.start < start) start = r.start;
-      if (r.end   > end)   end   = r.end;
-    }
-    return { start, end };
-  }
-
-  function inDateRange(dateText, after, before) {
-    if (!after && !before) return true;
-    const ev = parseDateRange(dateText);
-    if (!ev) return false;
-
-    const A = after  ? new Date(after)  : null;
-    const B = before ? new Date(before) : null;
-
-    if (A && isNaN(A)) return true;
-    if (B && isNaN(B)) return true;
-
-    const start = ev.start, end = ev.end;
-    if (A && end   < A) return false;
-    if (B && start > B) return false;
-    return true;
-  }
-
-  // === Popup + kopiera ===
-  function catLabel(e){ const meta = CATS[e.cat]; return meta ? meta.label : (e.cat || 'Okänd kategori'); }
-  function catEmoji(e){ const meta = CATS[e.cat]; return meta ? meta.emoji : '❓'; }
-  function esc(s){ return (s||'').toString().replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
-
-  function popupHtml(e){
-    const cat = CATS[e.cat] ? CATS[e.cat].label : e.cat;
-    const link = e.url ? `<p><a href="${e.url}" target="_blank" rel="noopener">Öppna källa</a></p>` : '';
-    const src = e.source ? `<p class="meta">Källa: <strong>${esc(e.source)}</strong></p>` : '';
-
-    const permaUrl = makePermalinkForEvent(e);
-    const copyTxt = [
-      `Titel: ${e.title}`,
-      `Plats: ${e.place}`,
-      `Datum: ${e.date}`,
-      `Kategori: ${cat}`,
-      e.source ? `Källa: ${e.source}` : null,
-      e.url ? `Länk: ${e.url}` : null,
-      `Permalänk: ${permaUrl}`
-    ].filter(Boolean).join('\n');
-
-    return `<div class="popup">
-      <h3>${esc(e.title)}</h3>
-      <div class="meta">${esc(e.place)} • ${esc(e.date)} • ${esc(cat)}</div>
-      <p>${esc(e.summary)}</p>
-      ${src}
-      ${link}
-      <p class="meta">
-        <a href="${permaUrl}" title="Permalänk till denna händelse">Permalänk</a>
-        &nbsp;•&nbsp;
-        <button type="button" style="padding:4px 8px; border:1px solid #ddd; border-radius:6px; background:#fff; cursor:pointer;"
-          onclick="copyEventDetails(\`${copyTxt.replace(/`/g,'\\`')}\`)">Kopiera</button>
-      </p>
-    </div>`;
-  }
-
-  async function copyEventDetails(text){
-    try { await navigator.clipboard.writeText(text); }
-    catch { alert(text); }
-  }
-
-  // ======== DINA HÄNDELSER ========
-  // >>> VIKTIGT: Klistra in dina befintliga arrayer här nedan – exakt som du redan har dem. <<<
-  // Ersätt placeholdern med dina två listor (events och additionalEvents).
-  // ---------------------------------------------------------
-  // BEGIN: dina data
-  const events = [
-    /* Klistra in HELA din befintliga `events`-lista här (oförändrad). */
-  ];
-  const additionalEvents = [
-  // Sverige
+/* =====================================================
+ * 0) DATA – klistra in händelserna här
+ * ===================================================== */
+const EVENTS = [
+    // Sverige
   {country:'SE',cat:'HYBRID',title:'Misstänkta konton söker drönarpiloter i forum',place:'Sverige (online)',date:'2025-10-05',lat:59.334,lng:18.067,summary:'Nya, misstänkta Facebook-konton erbjuder betalning för flygningar nära skyddsobjekt, och de verkar veta vilka de ska rikta in sig på. Administratörer tar bort profiler varje vecka.',url:'https://www.sverigesradio.se/artikel/dronarpiloter-soks-upp-pa-facebook-for-att-spana-pa-skyddsobjekt',source:'Sveriges Radio (2025)'},
   {country:'SE',cat:'NUCLEAR',title:'Ryskt uranfartyg med motorhaveri utanför Blekinge',place:'31 km SO om Hasslö, Blekinge (SE)',date:'2025-09-29',lat:56.118,lng:15.585,summary:'Panamaflaggade Mikhail Dudin ligger för ankar efter motorhaveri; tidigare urantransporter till Seversk. Kustbevakning/Marinen informerade.',url:'https://www.sydostran.se/nyheter/ryskt-fartyg-med-motorhaveri-utanfor-blekinge-anvands-for-att-frakta-uran/',source:'Hultgren, 2025 / Sydöstran'},
   {country:'SE',cat:'DRONE',title:'Drönarlarm vid Ronneby flygplats',place:'Ronneby Airport (SE)',date:'2025-09-29',lat:56.266,lng:15.265,summary:'Misstänkt drönare. Plan vände mot Kalmar innan landning i Ronneby. Civil/militär flygplats (F 17).',url:'https://www.expressen.se/nyheter/expressen-direkt/?post=1ddb8d7c-0474-4d53-af33-f0cc6c69a7ed',source:'Expressen Direkt (2025)'},
@@ -878,388 +732,270 @@
 
 {country:'RU',cat:'INTEL',title:'Transneft-vd död i fönsterfall utanför Moskva',place:'Rublyovka, Moskva (RU)',date:'2025-07-04',lat:55.7262,lng:37.1870,summary:'Andrei Badalov, 62, hittas död efter fall. Avskedsbrev uppges ha hittats; utredning tyder på självmord. Ännu ett mystiskt dödsfall i rysk energitopp.',url:'https://www.themoscowtimes.com/2025/07/04/transneft-vice-president-dies-in-apparent-fall-from-window-reports-say-a89678',source:'The Moscow Times / Reuters (2025-07-04)'},  
   ];
-  // END: dina data
-  // ---------------------------------------------------------
 
-  // ===== Sök-UI =====
-  const ALL_ITEMS = [];          // [{ e, marker, id }]
-  const IDMAP = new Map();       // id -> item
-  let overlaysControl = null;
-  let CURRENT_RESULTS = [];
+/* Kategorier + (valfria) ikoner */
+const CATS = {
+  DRONE:   { label:'Drönare / UAV',             emoji:'🛩️', color:'#b9e3ff', desc:'Incidenter med UAV/drönare.', iconUrl:'' },
+  INFRA:   { label:'Infrastruktur / sabotage',  emoji:'⚡',  color:'#ffe08a', desc:'Kritisk infrastruktur, sabotage, störningar.', iconUrl:'' },
+  NUCLEAR: { label:'Kärnenergi / farligt gods', emoji:'☢️',  color:'#ffd0d0', desc:'Kärntekniskt/farligt gods.', iconUrl:'' },
+  TERROR:  { label:'Terror / våld',             emoji:'💣',  color:'#ffc4b6', desc:'Terrorism och våldsbrott med hög påverkan.', iconUrl:'' },
+  INTEL:   { label:'Spionage / underrättelse',  emoji:'🕵️‍♂️', color:'#e6e6e6', desc:'Spioneri, underrättelse, säkerhet.', iconUrl:'' },
+  LEGAL:   { label:'Rättsfall / domar',         emoji:'⚖️',  color:'#c8ffcb', desc:'Juridik, domar och rättsfall.', iconUrl:'' },
+  MIL:     { label:'Militär / försvar',         emoji:'🪖',  color:'#b8efe6', desc:'Militär aktivitet och försvar.', iconUrl:'' },
+  HYBRID:  { label:'Påverkan / hybrid',         emoji:'🧠',  color:'#dfcffc', desc:'Informationspåverkan/hybridaktiviteter.', iconUrl:'' },
+  MAR:     { label:'Maritimt / skuggflotta',    emoji:'⚓',  color:'#cfe3ff', desc:'Händelser till sjöss/skuggflotta.', iconUrl:'' },
+  GPS:     { label:'GPS-störning / signal',     emoji:'📡',  color:'#eed9ff', desc:'GNSS-störningar och signalpåverkan.', iconUrl:'' },
+  POLICY:  { label:'Politik / policy',          emoji:'🏛️',  color:'#e9ffd4', desc:'Policy, myndigheter, styrdokument.', iconUrl:'' }
+};
 
-  const qInput     = document.getElementById('search-input');
-  const afterInput = document.getElementById('after-input');
-  const beforeInput= document.getElementById('before-input');
-  const btnSearch  = document.getElementById('search-btn');
-  const btnClear   = document.getElementById('clear-btn');
-  const btnLink    = document.getElementById('link-btn');
-  const hitsEl     = document.getElementById('hits');
-  const resBox     = document.getElementById('search-results');
-  const resList    = document.getElementById('res-list');
-  const resTitle   = document.getElementById('res-title');
-  const btnZoomAll = document.getElementById('res-zoom-all');
-  const btnResClose= document.getElementById('res-close');
-  const focusSel   = document.getElementById('focus-select');
+/* Alias & gazetteer (som i v3) */
+const CAT_ALIASES = {
+  DRONE:['uav','drönare','drone','quad','fpv'],
+  INFRA:['sabotage','infrastruktur','el','fiber','kabel','bro','tunnel'],
+  NUCLEAR:['kärn','nuclear','radioaktiv','uran','strål'],
+  TERROR:['terror','attack','spräng','bomb'],
+  INTEL:['spion','underrätt','säpo','intel','kgb','gru','fsb'],
+  LEGAL:['dom','åtal','rättsfall','rättegång'],
+  MIL:['militär','försvar','brigad','regemente','övning'],
+  HYBRID:['påverkan','hybrid','desinfo','psyop','reflexiv'],
+  MAR:['marin','sjöfart','tanker','hamn','fartyg','AIS'],
+  GPS:['gps','gnss','jamming','störning','spoof'],
+  POLICY:['politik','policy','myndighet','lag','förordning']
+};
+const COUNTRY_ALIASES = {
+  SE:['sverige','sweden','sv'], NO:['norge','norway'], DK:['danmark','denmark'],
+  FI:['finland'], DE:['tyskland','germany','deutschland'], PL:['polen','poland'],
+  UA:['ukraina','ukraine'], EU:['eu','europe','europa']
+};
+const GAZETTEER = {
+  'stockholm':{lat:59.3293,lng:18.0686,country:'SE'},
+  'göteborg':{lat:57.7089,lng:11.9746,country:'SE'},
+  'goteborg':{lat:57.7089,lng:11.9746,country:'SE'},
+  'malmö':{lat:55.6050,lng:13.0038,country:'SE'},
+  'malmo':{lat:55.6050,lng:13.0038,country:'SE'},
+  'oslo':{lat:59.9139,lng:10.7522,country:'NO'},
+  'köpenhamn':{lat:55.6761,lng:12.5683,country:'DK'},
+  'kobenhavn':{lat:55.6761,lng:12.5683,country:'DK'},
+  'helsingfors':{lat:60.1699,lng:24.9384,country:'FI'},
+  'helsinki':{lat:60.1699,lng:24.9384,country:'FI'}
+};
 
-  function norm(v){ return (v || '').toString().toLowerCase(); }
+/* 1) MAP */
+const map = L.map('map', { zoomSnap:.5, worldCopyJump:true }).setView([56.2, 12.9], 4);
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom:19, attribution:'&copy; OpenStreetMap'
+}).addTo(map);
+const cluster = L.markerClusterGroup({ disableClusteringAtZoom:10, spiderfyOnMaxZoom:true });
+map.addLayer(cluster);
 
-  function parseQuery(q){
-    const parts = (q||'').trim().split(/\s+/);
-    const f = { text:[], cat:null, country:null, after:null, before:null };
-    for (const p of parts) {
-      if (!p) continue;
-      const [k, ...rest] = p.split(':');
-      if (rest.length){
-        const val = rest.join(':'); const key = k.toLowerCase();
-        if (key === 'cat') f.cat = val.toUpperCase();
-        else if (key === 'country') f.country = val.toUpperCase();
-        else if (key === 'after') f.after = val;
-        else if (key === 'before') f.before = val;
-        else f.text.push(p);
-      } else f.text.push(p);
-    }
-    return f;
-  }
+/* 2) HELPERS */
+const $ = s => document.querySelector(s);
+const strip = s => (s||'').toString().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+const norm = s => strip(s).toLowerCase().trim();
+function fmtDate(d){ if(!d) return ''; const y=d.getUTCFullYear(), m=String(d.getUTCMonth()+1).padStart(2,'0'), da=String(d.getUTCDate()).padStart(2,'0'); return `${y}-${m}-${da}`; }
+function parseYMD(s){
+  if(!s) return null; const m=String(s).match(/^(\d{4})[.\-\/](\d{1,2})[.\-\/](\d{1,2})\.?$/); if(!m) return null;
+  const y=+m[1], mo=+m[2], d=+m[3]; if(mo<1||mo>12||d<1||d>31) return null;
+  const dt=new Date(Date.UTC(y,mo-1,d)); if(dt.getUTCFullYear()!==y||(dt.getUTCMonth()+1)!==mo||dt.getUTCDate()!==d) return null; return dt;
+}
+const sod = dt => new Date(Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth(), dt.getUTCDate(), 0,0,0,0));
+const eod = dt => new Date(Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth(), dt.getUTCDate(),23,59,59,999));
+function extractDateRange(raw){
+  if(!raw) return {after:null,before:null,cleaned:''}; let s=String(raw);
+  const reRange=/(\d{4}[.\-\/]\d{1,2}[.\-\/]\d{1,2})\.?\s*[—–-]\s*(\d{4}[.\-\/]\d{1,2}[.\-\/]\d{1,2})\.?/u;
+  const m=s.match(reRange); if(m){ const d1=parseYMD(m[1]), d2=parseYMD(m[2]); if(d1&&d2){ const cleaned=(s.slice(0,m.index)+s.slice(m.index+m[0].length)).replace(/\s{2,}/g,' ').trim(); return {after:sod(d1), before:eod(d2), cleaned}; } }
+  let after=null, before=null;
+  const ge=s.match(/(?:>=|after:)\s*(\d{4}[.\-\/]\d{1,2}[.\-\/]\d{1,2})/i);
+  const le=s.match(/(?:<=|before:)\s*(\d{4}[.\-\/]\d{1,2}[.\-\/]\d{1,2})/i);
+  if(ge){ const d=parseYMD(ge[1]); if(d) after=sod(d); s=s.replace(ge[0],''); }
+  if(le){ const d=parseYMD(le[1]); if(d) before=eod(d); s=s.replace(le[0],''); }
+  return {after,before,cleaned:s.replace(/\s{2,}/g,' ').trim()};
+}
+function eventSpan(e){
+  if(e.start||e.end){ const s=parseYMD(e.start||e.date), t=parseYMD(e.end||e.date); return {start:s? sod(s):null, end:t? eod(t):null}; }
+  const d=parseYMD(e.date); return d? {start:sod(d), end:eod(d)} : {start:null, end:null};
+}
+function eventId(e){ if(e.id) return e.id; const key=`${e.title||''}|${e.date||e.start||''}|${e.country||''}|${e.place||''}`; let h=0; for(let i=0;i<key.length;i++){ h=((h<<5)-h)+key.charCodeAt(i); h|=0; } return 'e'+Math.abs(h); }
+function isValidCoord(lat,lng){ return typeof lat==='number' && typeof lng==='number' && isFinite(lat)&&isFinite(lng)&&Math.abs(lat)<=90&&Math.abs(lng)<=180; }
+function fromGazetteer(text){
+  if(!text) return null; const n=norm(text); if(GAZETTEER[n]) return GAZETTEER[n];
+  const tokens=n.split(/[,;()\-–—\s]+/).filter(Boolean); for(const t of tokens){ if(GAZETTEER[t]) return GAZETTEER[t]; } return null;
+}
+function enrichEvent(e){ if(isValidCoord(e.lat,e.lng)) return e; let g=fromGazetteer(e.city||e.place); if(g){ e.lat=g.lat; e.lng=g.lng; e.country=e.country||g.country; } return e; }
 
-  function matches(e, query){
-    if (!query || !query.trim()) return true;
-    const f = parseQuery(query);
-    // datumfält (UI) har företräde om satta
-    const uiAfter  = afterInput.value || null;
-    const uiBefore = beforeInput.value || null;
-    const effAfter  = uiAfter  || f.after;
-    const effBefore = uiBefore || f.before;
+/* 3) ICONS */
+function buildIcon(e){
+  const meta=CATS[e.cat||'']||{}; const url=e.iconUrl||meta.iconUrl;
+  if(url){ return L.icon({ iconUrl:url, iconSize:e.iconSize||meta.iconSize||[30,30], iconAnchor:e.iconAnchor||meta.iconAnchor||[15,30], popupAnchor:[0,-24] }); }
+  const color=meta.color||'#cfd6df'; const emoji=meta.emoji||'📍';
+  const html=`<div style="position:relative;width:30px;height:30px;border-radius:50%;background:${color};border:2px solid #0003;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.25)"><div style="font-size:16px;filter:drop-shadow(0 1px 0 #0007)">${emoji}</div><div style="position:absolute;bottom:-7px;left:50%;transform:translateX(-50%) rotate(45deg);width:10px;height:10px;background:${color};border-right:2px solid #0003;border-bottom:2px solid #0003"></div></div>`;
+  return L.divIcon({ html, className:'', iconSize:[30,36], iconAnchor:[15,30] });
+}
 
-    if (f.cat){
-      const catKey = (e.cat||'').toUpperCase();
-      const catLabel = norm(CATS[e.cat]?.label);
-      if (catKey !== f.cat && !(catLabel||'').includes(norm(f.cat))) return false;
-    }
-    if (f.country && (e.country||'').toUpperCase() !== f.country) return false;
-    if (!inDateRange(e.date, effAfter, effBefore)) return false;
-
-    const hay = norm([e.title, e.place, e.summary, e.source, e.cat, e.country, e.date].join(' | '));
-    return f.text.every(w => hay.includes(norm(w)));
-  }
-
-  // ===== URL-state / permalänkar =====
-  function updateURLState({q, after, before, focus, id}){
-    const u = new URL(window.location.href);
-    const sp = u.searchParams;
-    if (q != null)      (q ? sp.set('q', q) : sp.delete('q'));
-    if (after != null)  (after ? sp.set('after', after) : sp.delete('after'));
-    if (before != null) (before ? sp.set('before', before) : sp.delete('before'));
-    if (focus != null)  (focus ? sp.set('focus', focus) : sp.delete('focus'));
-    if (id != null)     (id ? sp.set('id', id) : sp.delete('id'));
-    history.replaceState(null, '', `${u.pathname}?${sp.toString()}`);
-  }
-
-  function makePermalinkForFilters(){
-    const u = new URL(window.location.href);
-    const sp = u.searchParams;
-    sp.set('q', qInput.value || '');
-    if (afterInput.value) sp.set('after', afterInput.value); else sp.delete('after');
-    if (beforeInput.value) sp.set('before', beforeInput.value); else sp.delete('before');
-    const f = focusSel.value; if (f && f!=='world') sp.set('focus', f); else sp.delete('focus');
-    sp.delete('id'); // filter-länk utan specifik händelse
-    u.search = sp.toString();
-    return u.toString();
-  }
-
-  function makePermalinkForEvent(e){
-    const u = new URL(window.location.href);
-    const sp = u.searchParams;
-    sp.set('id', eventId(e));
-    if (qInput.value) sp.set('q', qInput.value); else sp.delete('q');
-    if (afterInput.value) sp.set('after', afterInput.value); else sp.delete('after');
-    if (beforeInput.value) sp.set('before', beforeInput.value); else sp.delete('before');
-    const f = focusSel.value; if (f && f!=='world') sp.set('focus', f); else sp.delete('focus');
-    u.search = sp.toString();
-    return u.toString();
-  }
-
-  function renderResults(items, query){
-    CURRENT_RESULTS = items || [];
-    const f = focusSel.value;
-    updateURLState({ q: (qInput.value||''), after: afterInput.value||'', before: beforeInput.value||'', focus: (f && f!=='world') ? f : '', id: '' });
-
-    if (!query){
-      resBox.style.display = 'none';
-      resList.innerHTML = '';
-      return;
-    }
-    const MAX = 120;
-    const shown = CURRENT_RESULTS.slice(0, MAX);
-    resTitle.textContent = `Sökresultat (${CURRENT_RESULTS.length})`;
-    if (shown.length === 0){
-      resList.innerHTML = `<div class="empty">Inga träffar.</div>`;
-    } else {
-      resList.innerHTML = shown.map((it, idx) => {
-        const e = it.e;
-        const meta = `${esc(e.place)} • ${esc(e.date)} • ${esc(catLabel(e))}`;
-        const src  = e.source ? `Källa: ${esc(e.source)}` : '';
-        return `
-          <div class="res" data-idx="${idx}" title="Flyg till händelse">
-            <div class="ico">${esc(catEmoji(e))}</div>
-            <div class="txt">
-              <div class="t">${esc(e.title)}</div>
-              <div class="m">${meta}</div>
-              <div class="s">${src}</div>
-            </div>
-          </div>`;
-      }).join('');
-      if (CURRENT_RESULTS.length > MAX){
-        resList.insertAdjacentHTML('beforeend', `<div class="empty">…och ${CURRENT_RESULTS.length-MAX} till. Förfina sökningen.</div>`);
-      }
-    }
-    resBox.style.display = 'block';
-  }
-
-  function applyFilter(query){
-    Object.values(clustersByCat).forEach(c => c.clearLayers());
-    const trimmed = (query||'').trim();
-    const items = trimmed ? ALL_ITEMS.filter(it => matches(it.e, trimmed)) : ALL_ITEMS.slice();
-
-    items.forEach(it => (clustersByCat[it.e.cat] || clustersByCat.HYBRID).addLayer(it.marker));
-
-    hitsEl.textContent = trimmed || afterInput.value || beforeInput.value ? `Träffar: ${items.length}` : '';
-    if (items.length > 0){
-      const fg = L.featureGroup(items.map(it => it.marker));
-      map.fitBounds(fg.getBounds().pad(0.2));
-      if (items.length === 1){
-        setTimeout(() => items[0].marker.openPopup(), 250);
-      }
-    }
-    renderResults(items, trimmed || afterInput.value || beforeInput.value);
-    return items;
-  }
-
-  function buildEffectiveQuery(){ return qInput.value || ''; }
-  function doSearch(){ applyFilter(buildEffectiveQuery()); }
-  function clearSearch(){
-    qInput.value = '';
-    afterInput.value = '';
-    beforeInput.value = '';
-    applyFilter('');
-    resBox.style.display = 'none';
-    hitsEl.textContent='';
-    updateURLState({ q:'', after:'', before:'', id:'' });
-  }
-
-  document.getElementById('search-btn').addEventListener('click', doSearch);
-  document.getElementById('clear-btn') .addEventListener('click', clearSearch);
-  document.getElementById('search-input').addEventListener('keydown', (ev) => { if (ev.key === 'Enter') doSearch(); });
-  let _t=null; document.getElementById('search-input').addEventListener('input', () => { clearTimeout(_t); _t = setTimeout(doSearch, 250); });
-  afterInput.addEventListener('change', doSearch);
-  beforeInput.addEventListener('change', doSearch);
-
-  document.getElementById('res-zoom-all').addEventListener('click', () => {
-    if (!CURRENT_RESULTS.length) return;
-    const fg = L.featureGroup(CURRENT_RESULTS.map(it => it.marker));
-    map.fitBounds(fg.getBounds().pad(0.2));
-    updateURLState({ id:'' });
-  });
-  document.getElementById('res-close').addEventListener('click', () => { resBox.style.display = 'none'; });
-
-  document.getElementById('res-list').addEventListener('click', (ev) => {
-    const row = ev.target.closest('.res');
-    if (!row) return;
-    const idx = Number(row.getAttribute('data-idx'));
-    const it = CURRENT_RESULTS[idx];
-    if (!it) return;
-    const { marker, e } = it;
-    const ll = marker.getLatLng();
-    map.setView(ll, Math.max(map.getZoom(), 8), { animate: true });
-    setTimeout(() => marker.openPopup(), 250);
-    updateURLState({ id: eventId(e) });
-  });
-
-  document.getElementById('link-btn').addEventListener('click', async () => {
-    try {
-      const url = makePermalinkForFilters();
-      await navigator.clipboard.writeText(url);
-      const btnLink = document.getElementById('link-btn');
-      btnLink.textContent = 'Kopierad!';
-      setTimeout(() => btnLink.textContent = 'Länk', 1200);
-    } catch {
-      const url = makePermalinkForFilters();
-      alert('Permalänk:\n' + url);
-    }
-  });
-
-  // ===== Legend (collapsible) =====
-  const legendEl = document.getElementById('legend');
-  const LS_KEY = 'legendCollapsed';
-  const initialCollapsed = (localStorage.getItem(LS_KEY) === '1') || isMobile;
-  legendEl.classList.toggle('collapsed', initialCollapsed);
-
-  legendEl.innerHTML = `
-    <div class="legend-header" id="legend-header" role="button" tabindex="0" aria-expanded="${!initialCollapsed}">
-      <span class="toggle" id="legend-toggle">${initialCollapsed ? '+' : '–'}</span>
-      <h4>Teckenförklaring</h4>
-      <span class="hint" id="legend-hint">${initialCollapsed ? 'Visa' : 'Dölj'}</span>
-    </div>
-    <div class="content" id="legend-content">
-      ${Object.entries(CATS).map(([k,v]) => `
-        <div class="row">
-          <span class="marker-emoji" style="background:${v.color}">${v.emoji}</span>
-          <div>${v.label}</div>
-        </div>
-      `).join('')}
-      <div class="row" style="margin-top:8px;">
-        <div></div>
-        <div style="font-size:12px; color:#555;">
-          Klicka symboler för mer info • Filtrera kategorier via lagerväljaren (uppe till höger).
-        </div>
-      </div>
-    </div>
-  `;
-
-  const legendHeader = document.getElementById('legend-header');
-  const legendToggle = document.getElementById('legend-toggle');
-  const legendHint   = document.getElementById('legend-hint');
-
-  function setCollapsed(collapsed) {
-    legendEl.classList.toggle('collapsed', collapsed);
-    legendToggle.textContent = collapsed ? '+' : '–';
-    legendHint.textContent   = collapsed ? 'Visa' : 'Dölj';
-    legendHeader.setAttribute('aria-expanded', String(!collapsed));
-    localStorage.setItem(LS_KEY, collapsed ? '1' : '0');
-  }
-  legendHeader.addEventListener('click', () => setCollapsed(!legendEl.classList.contains('collapsed')));
-  legendHeader.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      setCollapsed(!legendEl.classList.contains('collapsed'));
-    }
-  });
-
-  // ===== Fokus-väljare =====
-  const FOCUS = {
-    world:{center:[54.5,10],zoom:5},
-    se:{center:[62.0,16.0],zoom:5},
-    no:{center:[64.5,11.0],zoom:4},
-    dk:{center:[56.0,10.0],zoom:6},
-    de:{center:[51.2,10.45],zoom:5},
-    fi:{center:[64.5,26.0],zoom:4},
-    nl:{center:[52.3,5.3],zoom:7},
-    fr:{center:[47.0,2.0],zoom:5},
-    at:{center:[47.6,14.1],zoom:6},
-    uk:{center:[53.5,-1.8],zoom:5},
-    pl:{center:[54.5,18.0],zoom:5},
-    md:{center:[47.0,28.7],zoom:7},
-    rs:{center:[44.0,20.9],zoom:7},
-    ua:{center:[49.0,31.0],zoom:5},
-    ve:{center:[9.5,-66.5],zoom:6},
-    us:{center:[39.8,-98.6],zoom:4},
-    be:{center:[50.8,4.5],zoom:7},
-    cz:{center:[49.8,15.5],zoom:7},
-    es:{center:[41.4,-1.2],zoom:6},
-    it:{center:[42.6,12.6],zoom:5},
-    tr:{center:[39.0,35.0],zoom:5},
-    ch:{center:[46.8,8.2],zoom:7},
-    lt:{center:[55.2,24.2],zoom:6},
-    gr:{center:[39.1,22.9],zoom:6},
-    ie:{center:[53.2,-8.2],zoom:6}
-  };
-  focusSel.addEventListener('change', (e)=>{
-    const v = e.target.value; const f = FOCUS[v] || FOCUS.world; map.setView(f.center, f.zoom);
-    updateURLState({ focus: (v && v!=='world') ? v : '' });
-  });
-
-  // === Hjälpare för merge + indexering ===
-  function mergeEvents(a, b){
-    const m = new Map();
-    [...(a||[]), ...(b||[])].forEach(ev => {
-      const k = eventKey(ev);
-      if (!m.has(k)) m.set(k, ev);
+/* 4) FILTER STATE */
+const ACTIVE = { cats:new Set(Object.keys(CATS)), focus:'' , single:false };
+function renderCatsUI(){
+  const host = $('#cats'); host.innerHTML='';
+  Object.entries(CATS).forEach(([key,meta])=>{
+    const row=document.createElement('div'); row.className='catrow';
+    row.innerHTML=`<input class="sw" type="checkbox" id="c_${key}" ${ACTIVE.cats.has(key)?'checked':''}>
+                   <label for="c_${key}"><span>${meta.emoji||'📍'}</span><span>${meta.label||key}</span></label>`;
+    host.appendChild(row);
+    row.querySelector('input').addEventListener('change', ev=>{
+      if(ACTIVE.single){ ACTIVE.cats.clear(); if(ev.target.checked) ACTIVE.cats.add(key); ACTIVE.single=false; }
+      else{ if(ev.target.checked) ACTIVE.cats.add(key); else ACTIVE.cats.delete(key); }
+      update();
     });
-    return Array.from(m.values());
-  }
-  function resetClusters(){
-    Object.values(clustersByCat).forEach(c => c.clearLayers());
-    ALL_ITEMS.length = 0;
-    IDMAP.clear();
-  }
-  function indexEvents(data){
-    data.forEach(e => {
-      if (typeof e.lat !== 'number' || typeof e.lng !== 'number') return;
-      const marker = L.marker([e.lat, e.lng], { icon: makeIcon(e.cat) }).bindPopup(popupHtml(e));
-      const id = eventId(e);
-      (clustersByCat[e.cat] || clustersByCat.HYBRID).addLayer(marker);
-      const item = { e, marker, id };
-      ALL_ITEMS.push(item);
-      IDMAP.set(id, item);
-      marker.bindPopup(popupHtml(e)); // uppdatera med korrekt permalänk
+  });
+  $('#catsAll').onclick=()=>{ ACTIVE.cats=new Set(Object.keys(CATS)); renderCatsUI(); update(); };
+  $('#catsNone').onclick=()=>{ ACTIVE.cats.clear(); renderCatsUI(); update(); };
+  $('#catsOnly').onclick=()=>{ ACTIVE.single=true; };
+}
+function renderCatsExplain(){
+  const host=$('#catsExplain'); host.innerHTML='';
+  Object.entries(CATS).forEach(([k,m])=>{
+    const row=document.createElement('div'); row.className='row';
+    row.innerHTML=`<div class="emoji">${m.emoji||'📍'}</div>
+      <div><div class="name">${m.label||k} <span style="color:#778;font-weight:400">(${k})</span></div>
+      <div class="desc">${m.desc||''}</div></div>`;
+    host.appendChild(row);
+  });
+}
+
+/* 5) QUERY */
+function parseQueryPieces(q){ const parts=[]; const re=/"([^"]+)"|(\S+)/g; let m; while((m=re.exec(q))){ parts.push(m[1]||m[2]); } return parts; }
+function matches(e, raw){
+  if(ACTIVE.focus && (e.country||'').toUpperCase()!==ACTIVE.focus.toUpperCase()) return false;
+  if(ACTIVE.cats.size && !ACTIVE.cats.has(e.cat||'')) return false;
+  if(!raw||!raw.trim()) return true;
+  const {after,before,cleaned}=extractDateRange(raw); const span=eventSpan(e);
+  if(after && span.end && span.end<after) return false; if(before && span.start && span.start>before) return false;
+  const field={cat:null,country:null,city:null};
+  const fieldRe=/\b(cat|kategori|country|land|city|stad):\s*("[^"]+"|[^\s]+)/gi; let rest=cleaned, fm;
+  while((fm=fieldRe.exec(cleaned))){ const key=fm[1].toLowerCase(); const val=fm[2].replace(/^"|"$|^'|'$/g,''); if(key==='cat'||key==='kategori') field.cat=val; else if(key==='country'||key==='land') field.country=val; else field.city=val; rest=rest.replace(fm[0],''); }
+  rest=rest.replace(/\s{2,}/g,' ').trim();
+  const hay=[e.title,e.summary,e.place,e.city,e.source,e.country,(CATS[e.cat||'']||{}).label,e.cat].map(x=>norm(x)).join(' ');
+  if(field.cat){ const want=norm(field.cat); const key=(e.cat||'').toUpperCase(); const aliases=(CAT_ALIASES[key]||[]).map(norm); const ok=key.includes(want.toUpperCase()) || (CATS[key]?.label && norm(CATS[key].label).includes(want)) || aliases.some(a=>a.includes(want)||want.includes(a)); if(!ok) return false; }
+  if(field.country){ const want=norm(field.country); const cc=(e.country||'').toUpperCase(); const ali=(COUNTRY_ALIASES[cc]||[]).map(norm); const ok=cc.includes(want.toUpperCase()) || ali.includes(want); if(!ok) return false; }
+  if(field.city){ const want=norm(field.city); const ok=(norm(e.city||'')).includes(want) || (norm(e.place||'')).includes(want); if(!ok) return false; }
+  for(const t of parseQueryPieces(rest).map(norm).filter(Boolean)){ if(!hay.includes(t)) return false; }
+  return true;
+}
+
+/* 6) RENDER */
+const markersById=new Map();
+function escapeHtml(s){ return (s||'').toString().replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
+function buildPermalink(id){
+  const u=new URL(location.href);
+  const f=new URLSearchParams(u.search); const q=$('#q').value||''; const focus=$('#focus').value||'';
+  if(q) f.set('q', q); else f.delete('q'); if(focus) f.set('focus', focus); else f.delete('focus');
+  f.set('id', id); return `${location.pathname}?${f.toString()}`;
+}
+function popupHtml(e){
+  const meta=CATS[e.cat||'']||{}; const cat=meta.label||(e.cat||'Okänd'); const emoji=meta.emoji||'📍';
+  const dateStr= e.start||e.end ? [ e.start?fmtDate(parseYMD(e.start)):'', e.end?fmtDate(parseYMD(e.end)):'' ].filter(Boolean).join('–') : (e.date||'');
+  const src=e.source? ` • <span>${escapeHtml(e.source)}</span>`:'';
+  const link=e.url? `<div style="margin-top:.35rem"><a href="${encodeURI(e.url)}" target="_blank" rel="noopener" style="color:#0d6efd">Öppna källa</a></div>`:'';
+  const pl=`<div style="margin-top:.25rem"><a href="${buildPermalink(eventId(e))}" style="color:#0d6efd">Permalänk</a></div>`;
+  return `<div style="min-width:260px">
+    <div style="font-weight:700;margin-bottom:4px">${emoji} ${escapeHtml(e.title||'Händelse')}</div>
+    <div style="color:#667">${escapeHtml(e.place||e.city||'')}</div>
+    <div style="margin:.35rem 0 .25rem 0">${escapeHtml(e.summary||'')}</div>
+    <div style="font-size:12px;color:#667"><span>${escapeHtml(cat)}</span> • <span>${escapeHtml(dateStr)}</span>${src}</div>
+    ${link}${pl}
+    <div style="margin-top:.35rem;font-size:12px;color:#667">ID: ${escapeHtml(eventId(e))}</div>
+  </div>`;
+}
+function renderList(list){
+  const host=$('#list'); host.innerHTML='';
+  list.forEach(e=>{
+    const el=document.createElement('div'); el.className='item';
+    const id=eventId(e); const pl=buildPermalink(id);
+    el.innerHTML=`<h4>${escapeHtml(e.title||'Händelse')}</h4>
+      <div class="meta">${escapeHtml(e.place||e.city||'')} • ${escapeHtml(e.date||'')}</div>
+      <div style="display:flex;gap:.5rem;margin-top:.25rem">
+        ${e.url? `<a href="${encodeURI(e.url)}" target="_blank" rel="noopener">Källa</a>`:''}
+        <a href="${pl}">Permalänk</a>
+      </div>`;
+    el.addEventListener('click', ()=>{
+      const marker=markersById.get(id); if(marker){ map.setView(marker.getLatLng(), Math.max(map.getZoom(), 9)); marker.openPopup(); }
     });
+    host.appendChild(el);
+  });
+}
+function render(list){
+  cluster.clearLayers(); markersById.clear();
+  const valid=list.map(enrichEvent).filter(e=>isValidCoord(e.lat,e.lng));
+  valid.forEach(e=>{
+    const id=eventId(e);
+    const m=L.marker([e.lat,e.lng], { title:e.title||'', icon:buildIcon(e) });
+    m.bindPopup(popupHtml(e)); markersById.set(id,m); cluster.addLayer(m);
+  });
+  $('#count').textContent = `${valid.length} träffar`;
+  $('#resCount').textContent = `(${valid.length})`;
+  if(valid.length){ try{ const b=L.latLngBounds(valid.map(e=>[e.lat,e.lng])); map.fitBounds(b.pad(0.25)); }catch{} }
+  renderList(valid);
+  $('#results').style.display = valid.length ? 'block' : 'none';
+}
+
+/* 7) UI + Permalänk */
+const qEl=$('#q'), focusEl=$('#focus'), datesChip=$('#datesChip');
+function setPermalinkWithoutId(){
+  const q=qEl.value||''; const f=new URLSearchParams(location.search);
+  if(q) f.set('q', q); else f.delete('q');
+  const focus=focusEl.value||''; if(focus) f.set('focus', focus); else f.delete('focus');
+  f.delete('id');
+  history.replaceState(null,'', `${location.pathname}?${f.toString()}`);
+}
+function applyLegacyDateParams(url){
+  const u=new URL(url, location.href); const a=u.searchParams.get('after'); const b=u.searchParams.get('before'); if(!a&&!b) return ''; let patch=''; if(a) patch+=` >=${a}`; if(b) patch+=` <=${b}`; return patch;
+}
+function readFromURL(){
+  const u=new URL(location.href); const q=(u.searchParams.get('q')||'')+applyLegacyDateParams(location.href); const focus=u.searchParams.get('focus')||''; const openId=u.searchParams.get('id')||'';
+  if(q) qEl.value=q; if(focus){ focusEl.value=focus; ACTIVE.focus=focus; } update(openId);
+}
+
+$('#copylink').addEventListener('click', async ()=>{
+  setPermalinkWithoutId();
+  try{ await navigator.clipboard.writeText(location.href); const b=$('#copylink'); const t=b.textContent; b.textContent='✔︎ Kopierad'; setTimeout(()=>b.textContent=t,1400);}catch{}
+});
+$('#clearBtn').addEventListener('click', ()=>{ qEl.value=''; update(); qEl.focus(); });
+$('#searchBtn').addEventListener('click', ()=> update());
+$('#zoomAll').addEventListener('click', ()=>{
+  const list = EVENTS.filter(e=>matches(e, qEl.value||''))
+    .map(enrichEvent).filter(e=>isValidCoord(e.lat,e.lng));
+  if(list.length){ const b=L.latLngBounds(list.map(e=>[e.lat,e.lng])); map.fitBounds(b.pad(0.25)); }
+});
+$('#closeResults').addEventListener('click', ()=> $('#results').style.display='none');
+
+/* 8) LOOP */
+function update(openId){
+  const q=qEl.value||''; const {after,before}=extractDateRange(q);
+  datesChip.style.display = (after||before) ? 'inline-block' : 'none';
+  datesChip.textContent = (after||before) ? `Datum: ${after?fmtDate(after):'…'} — ${before?fmtDate(before):'…'}` : '';
+  ACTIVE.focus=(focusEl.value||'').toUpperCase();
+  const filtered = EVENTS.filter(e=>matches(e,q));
+  render(filtered);
+  setPermalinkWithoutId();
+  if(openId){ const m=markersById.get(openId); if(m){ map.setView(m.getLatLng(), Math.max(map.getZoom(),9)); m.openPopup(); } }
+}
+qEl.addEventListener('input', ()=> update());
+focusEl.addEventListener('change', ()=> update());
+
+/* 9) INIT */
+function boot(){
+  EVENTS.forEach(e=> e.id=eventId(e));
+  renderCatsUI(); renderCatsExplain();
+  // Collapsible: open on desktop, closed on mobile
+  const catDetails = document.getElementById('catbox');
+  if (matchMedia('(max-width: 980px)').matches) {
+    catDetails.open = false;
+  } else {
+    catDetails.open = true;
   }
-  function ensureLayerControl(){
-    if (overlaysControl) return;
-    const overlays = {};
-    Object.entries(CATS).forEach(([k,v]) => {
-      overlays[`${v.emoji} ${v.label}`] = clustersByCat[k];
-      clustersByCat[k].addTo(map); // alla lager på som standard
-    });
-    overlaysControl = L.control.layers(null, overlays, { collapsed: isMobile, sortLayers: true }).addTo(map);
-  }
-
-  function openById(id){
-    const it = IDMAP.get(id);
-    if (!it) return false;
-    const { marker } = it;
-    const ll = marker.getLatLng();
-    map.setView(ll, Math.max(map.getZoom(), 8), { animate: true });
-    setTimeout(() => marker.openPopup(), 250);
-    return true;
-  }
-
-  // Init
-  (function init(){
-    const merged = mergeEvents(events, additionalEvents);
-    resetClusters();
-    indexEvents(merged);
-    ensureLayerControl();
-
-    const sp = new URLSearchParams(location.search);
-    const q = sp.get('q') || '';
-    const af = sp.get('after') || '';
-    const bf = sp.get('before') || '';
-    const fc = sp.get('focus') || '';
-    const id = sp.get('id') || '';
-
-    if (fc && FOCUS[fc]) { focusSel.value = fc; const f = FOCUS[fc]; map.setView(f.center, f.zoom); }
-
-    qInput.value = q;
-    afterInput.value = af;
-    beforeInput.value = bf;
-
-    const items = applyFilter(buildEffectiveQuery());
-
-    if (id){
-      if (!openById(id)){
-        if (ALL_ITEMS.length){
-          const fg = L.featureGroup(ALL_ITEMS.map(it => it.marker));
-          map.fitBounds(fg.getBounds().pad(0.2));
-        }
-        openById(id);
-      }
-    } else if (!q && !af && !bf && ALL_ITEMS.length){
-      const fg = L.featureGroup(ALL_ITEMS.map(it => it.marker));
-      map.fitBounds(fg.getBounds().pad(0.2));
-    }
-  })();
-
-  // API för runtime-uppdatering om du vill
-  window.loadEvents = function(newEvents, newAdditional){
-    const merged = mergeEvents(newEvents || [], newAdditional || []);
-    resetClusters();
-    indexEvents(merged);
-    ensureLayerControl();
-    if (ALL_ITEMS.length){
-      const fg = L.featureGroup(ALL_ITEMS.map(it => it.marker));
-      map.fitBounds(fg.getBounds().pad(0.2));
-    }
-  };
+  readFromURL();
+}
+boot();
 </script>
 </body>
 </html>
