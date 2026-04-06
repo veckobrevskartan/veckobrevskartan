@@ -3892,6 +3892,52 @@ function renderList(list){
   });
 }
 
+/* Öppna en markör robust – hanterar kluster, animationer och GitHub Pages-latens */
+function openMarkerRobust(m, attempt){
+  attempt = attempt || 1;
+  const MAX = 12;         // max antal försök
+  const DELAY = 350;      // ms mellan försök (totalt ~4s)
+
+  // Flytta kartan till markörens position med lämplig zoom
+  const latlng = m.getLatLng();
+  const targetZoom = Math.max(map.getZoom(), 8);
+
+  // Försök expandera klustret som innehåller markören
+  cluster.zoomToShowLayer(m, () => {
+    // Efter zoomToShowLayer – vänta på att animationen landar
+    map.once('zoomend', () => {
+      map.setView(latlng, Math.max(map.getZoom(), 8), {animate:false});
+      tryOpenPopup(m, 1);
+    });
+  });
+
+  // Fallback om zoomToShowLayer aldrig triggar zoomend (redan rätt zoom)
+  setTimeout(() => {
+    if(!m.isPopupOpen()){
+      map.setView(latlng, targetZoom, {animate:false});
+      tryOpenPopup(m, 1);
+    }
+  }, 600);
+}
+
+function tryOpenPopup(m, attempt){
+  const MAX = 10;
+  const DELAY = 300;
+
+  // Kontrollera om markören är synlig (inte inuti ett cluster)
+  const parent = m.__parent;
+  const isVisible = !parent || parent._childCount === undefined ||
+                    map.hasLayer(m);
+
+  if(isVisible || attempt >= MAX){
+    m.openPopup();
+    return;
+  }
+
+  // Markören är fortfarande i kluster – vänta och försök igen
+  setTimeout(() => tryOpenPopup(m, attempt + 1), DELAY);
+}
+
 function render(list,openId){
   cluster.clearLayers();markersById.clear();
   const valid=list.map(enrichEvent).filter(e=>isValidCoord(e.lat,e.lng));
@@ -3920,21 +3966,8 @@ function render(list,openId){
   if(openId){
     const m=markersById.get(openId);
     if(m){
-      // Steg 1: Zooma till markören och expandera kluster
-      cluster.zoomToShowLayer(m,()=>{
-        // Steg 2: Centrera på markören med lämplig zoom
-        const targetZoom=Math.max(map.getZoom(),8);
-        map.setView(m.getLatLng(),targetZoom,{animate:true});
-        // Steg 3: Vänta på att zoom-animationen är klar, öppna sedan popup
-        map.once('zoomend moveend',()=>{
-          setTimeout(()=>{
-            m.openPopup();
-          },150);
-        });
-      });
+      openMarkerRobust(m);
     } else {
-      // Markören hittades inte – händelsen kanske inte matchar aktiva filter
-      // Visa en toast som förklarar
       showToast('Händelsen hittades inte – filtren kan behöva återställas',3000);
     }
   }
