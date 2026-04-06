@@ -5,12 +5,12 @@
   <meta charset="utf-8" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: blob:; style-src 'self' 'unsafe-inline' https:; script-src 'self' 'unsafe-inline' https:; img-src * data: blob:; connect-src *;"/>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Veckobrev – Interaktiv händelsekarta (v3.1)</title>
+  <title>Veckobrev – Interaktiv händelsekarta (v4)</title>
 
-  <!-- Leaflet + MarkerCluster CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous"/>
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" crossorigin="anonymous"/>
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" crossorigin="anonymous"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 
   <style>
     :root{
@@ -18,75 +18,144 @@
       --chip:#eef2f7; --input:#fff; --shadow:0 6px 24px rgba(0,0,0,.1);
     }
     *{box-sizing:border-box}
-    html, body { height: 100%; margin:0; background:var(--bg); color:var(--fg); font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif }
-    #app{ display:grid; grid-template-rows:auto 1fr; height:100vh; }
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+    #app{display:grid;grid-template-rows:auto 1fr;height:100vh}
 
     /* Topbar */
     .topbar{
-      position:sticky; top:0; z-index:1000; display:flex; align-items:center; gap:.5rem;
-      padding:.5rem .65rem; background:var(--panel); border-bottom:1px solid var(--border);
+      position:sticky;top:0;z-index:1000;display:flex;align-items:center;gap:.4rem;
+      padding:.45rem .65rem;background:var(--panel);border-bottom:1px solid var(--border);flex-wrap:wrap;
     }
-    .brand{ font-weight:700; color:#445; margin-right:.25rem }
-    .select{ background:var(--input); border:1px solid var(--border); border-radius:999px; padding:.35rem .6rem; }
-    .input{ display:flex; align-items:center; gap:.4rem; background:var(--input); border:1px solid var(--border); border-radius:999px; padding:.4rem .6rem; width:min(48vw,680px) }
-    .input input{ all:unset; width:100% }
-    .btn{ padding:.4rem .6rem; border:1px solid var(--border); border-radius:999px; background:var(--panel); cursor:pointer }
-    .btn:hover{ border-color:#b8c0c9 }
-    .chip{ display:none; background:var(--chip); border:1px solid var(--border); border-radius:999px; padding:.2rem .5rem; margin-left:.25rem; color:#445 }
-    .count{ color:#666 }
-    .spacer{ flex:1 }
+    .brand{font-weight:700;color:#445;margin-right:.15rem;white-space:nowrap}
+    .input{display:flex;align-items:center;gap:.4rem;background:var(--input);border:1px solid var(--border);border-radius:999px;padding:.4rem .6rem;width:min(44vw,560px)}
+    .input input{all:unset;width:100%}
+    .btn{padding:.38rem .65rem;border:1px solid var(--border);border-radius:999px;background:var(--panel);cursor:pointer;white-space:nowrap;font-size:13px}
+    .btn:hover{border-color:#b8c0c9;background:#f5f7f9}
+    .btn.active{background:#0d6efd;color:#fff;border-color:#0d6efd}
+    .chip{display:none;background:var(--chip);border:1px solid var(--border);border-radius:999px;padding:.2rem .5rem;margin-left:.15rem;color:#445;font-size:12px}
+    .count{color:#666;font-size:13px;white-space:nowrap}
+    .spacer{flex:1}
+
+    /* ---- LANDFILTER MULTI-SELECT ---- */
+    .country-wrap{position:relative}
+    .country-btn{
+      display:flex;align-items:center;gap:.35rem;
+      background:var(--input);border:1px solid var(--border);border-radius:999px;
+      padding:.38rem .65rem;cursor:pointer;font-size:13px;white-space:nowrap;min-width:130px;
+    }
+    .country-btn:hover{border-color:#b8c0c9}
+    .country-btn.has-sel{border-color:var(--accent);background:#eef2ff;font-weight:600}
+    .country-btn .lbl{flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis;max-width:120px}
+    .country-btn .caret{font-size:.7rem;color:#888;transition:transform .18s}
+    .country-btn.open .caret{transform:rotate(180deg)}
+
+    .country-dd{
+      display:none;flex-direction:column;
+      position:absolute;top:calc(100% + 5px);left:0;z-index:1100;
+      background:#fff;border:1px solid var(--border);border-radius:10px;
+      box-shadow:var(--shadow);width:260px;max-height:340px;overflow:hidden;
+    }
+    .country-dd.open{display:flex}
+    .country-dd-search{padding:8px 10px 5px;border-bottom:1px solid #eee;flex-shrink:0}
+    .country-dd-search input{width:100%;padding:5px 10px;border:1px solid #ddd;border-radius:20px;font-size:13px;outline:none;box-sizing:border-box}
+    .country-dd-search input:focus{border-color:var(--accent)}
+    .country-dd-actions{display:flex;gap:5px;padding:5px 10px;border-bottom:1px solid #eee;flex-shrink:0}
+    .country-dd-actions button{font-size:12px;padding:2px 10px;border-radius:10px;background:#f0f3f4;border:1px solid #ddd;cursor:pointer}
+    .country-dd-actions button:hover{background:#dde3e8}
+    .country-list{overflow-y:auto;flex:1;padding:3px 0}
+    .c-item{display:flex;align-items:center;gap:7px;padding:6px 12px;cursor:pointer;font-size:13px;user-select:none}
+    .c-item:hover{background:#f5f7f9}
+    .c-item.sel{background:#eef2ff;font-weight:600}
+    .c-item input[type=checkbox]{accent-color:var(--accent);width:13px;height:13px;flex-shrink:0}
+    .c-item .cbadge{margin-left:auto;font-size:11px;background:#e8edf2;color:#556;padding:1px 6px;border-radius:8px}
+    .c-item.sel .cbadge{background:#d0dce8;color:#234}
 
     /* Layout */
-    #main{ position:relative; height:calc(100vh - 54px); }
-    #map{ height:100%; width:100%; background:transparent }
+    #main{position:relative;height:calc(100vh - 54px)}
+    #map{height:100%;width:100%;background:transparent}
 
-    /* Results dropdown under search field */
+    /* Results panel */
     .results{
-      position:absolute; left:.65rem; top:56px; width:min(520px, 92vw);
-      max-height:min(62vh, 680px); overflow:auto; background:#fff; border:1px solid var(--border); border-radius:12px;
-      box-shadow:var(--shadow); z-index:900; display:none;
+      position:absolute;left:.65rem;top:10px;width:min(480px,92vw);
+      max-height:min(62vh,660px);overflow:hidden;display:flex;flex-direction:column;
+      background:#fff;border:1px solid var(--border);border-radius:12px;
+      box-shadow:var(--shadow);z-index:900;display:none;
     }
-    .results header{ position:sticky; top:0; background:#fff; border-bottom:1px solid var(--border); padding:.5rem .6rem; display:flex; gap:.4rem; align-items:center }
-    .results .items{ padding:.25rem 0 .5rem }
-    .item{ padding:.55rem .65rem; border-bottom:1px dashed #e5e9ef; cursor:pointer }
-    .item:last-child{ border-bottom:none }
-    .item h4{ margin:.1rem 0 .2rem; font-size:14px }
-    .item .meta{ color:#667; font-size:12px }
-    .item a{ color:var(--accent); text-decoration:none }
+    .results header{flex-shrink:0;background:#fff;border-bottom:1px solid var(--border);padding:.45rem .6rem;display:flex;gap:.4rem;align-items:center}
+    .results .sort-row{flex-shrink:0;padding:.3rem .6rem;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:.4rem;font-size:12px;color:#556}
+    .results .sort-row select{font-size:12px;border:1px solid #ddd;border-radius:20px;padding:2px 8px;background:#fff;cursor:pointer}
+    .results .items{overflow-y:auto;flex:1;padding:.2rem 0 .4rem}
+    .item{padding:.5rem .65rem;border-bottom:1px dashed #e5e9ef;cursor:pointer}
+    .item:last-child{border-bottom:none}
+    .item:hover{background:#f8f9fb}
+    .item h4{margin:.1rem 0 .15rem;font-size:13.5px}
+    .item .meta{color:#667;font-size:12px}
+    .item .item-links{display:flex;gap:.5rem;margin-top:.25rem;align-items:center}
+    .item a{color:var(--accent);text-decoration:none;font-size:12px}
+    .item a:hover{text-decoration:underline}
+    .copy-btn{font-size:11px;padding:2px 8px;border-radius:8px;background:#f0f3f4;border:1px solid #ddd;cursor:pointer;color:#445}
+    .copy-btn:hover{background:#dde3e8}
 
-    /* Collapsible category panel – top right */
+    /* Category panel */
     details.catbox{
-      position:absolute; right:10px; top:10px; z-index:901; background:#fff; border:1px solid var(--border); border-radius:12px;
-      box-shadow:var(--shadow); width:min(340px, 92vw);
+      position:absolute;right:10px;top:10px;z-index:901;background:#fff;
+      border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);width:min(320px,92vw);
     }
-    details.catbox > summary{
-      list-style:none; cursor:pointer; user-select:none; padding:.55rem .65rem; font-weight:700;
-      display:flex; align-items:center; gap:.4rem;
-    }
-    details.catbox[open] > summary{ border-bottom:1px solid var(--border); }
-    details.catbox .content{ padding:.5rem .6rem .6rem; max-height:55vh; overflow:auto; }
-    .catrow{ display:flex; align-items:center; gap:.4rem; padding:.2rem 0 }
-    .catrow label{ flex:1; display:flex; align-items:center; gap:.35rem }
-    .catrow .sw{ width:18px; height:18px }
-    .cat-actions{ display:flex; gap:.35rem; margin-top:.4rem }
+    details.catbox>summary{list-style:none;cursor:pointer;user-select:none;padding:.5rem .65rem;font-weight:700;display:flex;align-items:center;gap:.4rem}
+    details.catbox[open]>summary{border-bottom:1px solid var(--border)}
+    details.catbox .content{padding:.45rem .55rem .55rem;max-height:55vh;overflow:auto}
+    .catrow{display:flex;align-items:center;gap:.4rem;padding:.2rem 0}
+    .catrow label{flex:1;display:flex;align-items:center;gap:.35rem}
+    .catrow .sw{width:16px;height:16px}
+    .cat-actions{display:flex;gap:.35rem;margin-top:.4rem;flex-wrap:wrap}
 
-    /* Bottom-left collapsible legend */
+    /* Legend */
     .legend{
-      position:absolute; left:10px; bottom:10px; z-index:901;
-      background:#fff; border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow);
-      max-width:min(92vw, 420px);
+      position:absolute;left:10px;bottom:10px;z-index:901;
+      background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);
+      max-width:min(92vw,400px);
     }
-    .legend summary{ list-style:none; padding:.45rem .6rem; cursor:pointer; user-select:none; font-weight:600 }
-    .legend .content{ padding:.45rem .6rem; max-height:40vh; overflow:auto; }
-    .legend .row{ display:flex; gap:.5rem; padding:.2rem 0; border-left:2px solid #e5e9ef }
-    .legend .emoji{ min-width:1.25rem; text-align:center }
-    .legend .name{ font-weight:600 }
-    .legend .desc{ color:#667 }
+    .legend summary{list-style:none;padding:.4rem .6rem;cursor:pointer;user-select:none;font-weight:600}
+    .legend .content{padding:.4rem .6rem;max-height:38vh;overflow:auto}
+    .legend .row{display:flex;gap:.5rem;padding:.2rem 0;border-left:2px solid #e5e9ef}
+    .legend .emoji{min-width:1.25rem;text-align:center}
+    .legend .name{font-weight:600}
+    .legend .desc{color:#667}
 
-    .leaflet-control-attribution{ background:#fff8; border-radius:8px; padding:.15rem .35rem }
+    /* Söksyntax-overlay */
+    .help-overlay{
+      display:none;position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.45);
+      align-items:center;justify-content:center;
+    }
+    .help-overlay.open{display:flex}
+    .help-box{
+      background:#fff;border-radius:14px;padding:1.5rem 1.75rem;max-width:520px;width:92vw;
+      box-shadow:0 12px 40px rgba(0,0,0,.25);position:relative;
+    }
+    .help-box h3{margin:0 0 .75rem;font-size:16px}
+    .help-box table{width:100%;border-collapse:collapse;font-size:13px}
+    .help-box td{padding:.3rem .4rem;border-bottom:1px solid #eee;vertical-align:top}
+    .help-box td:first-child{font-family:monospace;color:#0d6efd;white-space:nowrap;padding-right:.8rem}
+    .help-close{position:absolute;top:.75rem;right:.9rem;background:none;border:none;font-size:1.3rem;cursor:pointer;color:#556}
 
-    @media (max-width: 980px){
-      details.catbox{ width:min(280px, 92vw) }
+    /* Toast */
+    .toast{
+      position:fixed;bottom:28px;left:50%;transform:translateX(-50%);
+      background:#222;color:#fff;padding:8px 20px;border-radius:20px;font-size:13px;
+      box-shadow:0 4px 14px rgba(0,0,0,.22);z-index:3000;opacity:0;pointer-events:none;transition:opacity .25s;
+    }
+    .toast.show{opacity:1}
+
+    .leaflet-control-attribution{background:#fff8;border-radius:8px;padding:.15rem .35rem}
+
+    @media(max-width:980px){
+      details.catbox{width:min(260px,92vw)}
+      .input{width:min(52vw,380px)}
+    }
+    @media(max-width:600px){
+      .topbar{gap:.3rem}
+      .input{width:100%;order:10;flex-basis:100%}
+      .country-btn .lbl{max-width:80px}
     }
   </style>
 </head>
@@ -94,25 +163,34 @@
 <div id="app">
   <div class="topbar">
     <div class="brand">Händelsekarta</div>
-    <select id="focus" class="select" title="Fokus (land)">
-      <option value="">Alla länder</option>
-      <option value="SE">🇸🇪 Sverige</option>
-      <option value="NO">🇳🇴 Norge</option>
-      <option value="DK">🇩🇰 Danmark</option>
-      <option value="FI">🇫🇮 Finland</option>
-      <option value="DE">🇩🇪 Tyskland</option>
-      <option value="PL">🇵🇱 Polen</option>
-      <option value="UA">🇺🇦 Ukraina</option>
-      <option value="EU">🇪🇺 Europa</option>
-    </select>
 
-    <label class="input" title="Fritext och/eller datumintervall, t.ex. 2025.08.01.-2025.09.01. | prefixes: cat:, country:, city:">
+    <!-- Multi-select landfilter -->
+    <div class="country-wrap" id="countryWrap">
+      <button class="country-btn" id="countryBtn" onclick="toggleCountryDd()" aria-haspopup="listbox" aria-expanded="false">
+        <span class="lbl" id="countryBtnLbl">🌍 Alla länder</span>
+        <i class="fas fa-chevron-down caret"></i>
+      </button>
+      <div class="country-dd" id="countryDd" role="listbox" aria-multiselectable="true">
+        <div class="country-dd-search">
+          <input type="text" id="countrySearch" placeholder="Sök land…" oninput="renderCountryList()" aria-label="Sök land">
+        </div>
+        <div class="country-dd-actions">
+          <button onclick="selectAllCountries()">Välj alla</button>
+          <button onclick="clearCountries()">Rensa</button>
+        </div>
+        <div class="country-list" id="countryList"></div>
+      </div>
+    </div>
+
+    <label class="input" title="Fritext, cat:DRONE, city:Göteborg, 2025.08.01.-2025.09.01.">
       🔎
-      <input id="q" placeholder='Sök (fraser i "…", cat:DRONE, city:Göteborg, 2025.08.01.-2025.09.01.)' spellcheck="false" autocomplete="off"/>
+      <input id="q" placeholder='Sök händelse, plats, kategori…' spellcheck="false" autocomplete="off"/>
     </label>
-    <button id="searchBtn" class="btn" title="Sök">Sök</button>
-    <button id="clearBtn" class="btn" title="Rensa sökfältet">Rensa</button>
-    <button id="copylink" class="btn" title="Kopiera permalänk">Länk</button>
+    <button id="searchBtn" class="btn">Sök</button>
+    <button id="clearBtn" class="btn">Rensa</button>
+    <button id="lockBtn" class="btn" title="Lås kartvyn – förhindra auto-zoom vid ny sökning">🔒 Lås vy</button>
+    <button id="copylink" class="btn" title="Kopiera permalänk till aktiv vy">Länk</button>
+    <button id="helpBtn" class="btn" title="Söksyntaxguide">?</button>
     <span id="datesChip" class="chip"></span>
     <span id="count" class="count"></span>
     <div class="spacer"></div>
@@ -121,32 +199,41 @@
   <div id="main">
     <div id="map" role="region" aria-label="Interaktiv karta"></div>
 
-    <!-- Results dropdown -->
+    <!-- Results panel -->
     <div id="results" class="results" aria-live="polite">
       <header>
         <strong id="resTitle">Sökresultat</strong>
         <span id="resCount" class="count"></span>
         <span class="spacer"></span>
         <button id="zoomAll" class="btn" title="Zooma till alla">Zooma</button>
-        <button id="closeResults" class="btn" title="Stäng">Stäng</button>
+        <button id="closeResults" class="btn" title="Stäng">✕</button>
       </header>
+      <div class="sort-row">
+        Sortera:
+        <select id="sortSel" onchange="applySort()">
+          <option value="newest">Nyast först</option>
+          <option value="oldest">Äldst först</option>
+          <option value="country">Land A–Z</option>
+          <option value="cat">Kategori A–Z</option>
+        </select>
+      </div>
       <div id="list" class="items"></div>
     </div>
 
-    <!-- Collapsible Category panel (top-right) -->
+    <!-- Category panel -->
     <details id="catbox" class="catbox">
       <summary>📂 Kategorier</summary>
       <div class="content">
         <div id="cats"></div>
         <div class="cat-actions">
           <button id="catsAll" class="btn">Välj alla</button>
-          <button id="catsNone" class="btn">Avmarkera alla</button>
-          <button id="catsOnly" class="btn" title="Single-select nästa klick">Single</button>
+          <button id="catsNone" class="btn">Avmarkera</button>
+          <button id="catsOnly" class="btn" title="Nästa klick väljer bara den kategorin">Single</button>
         </div>
       </div>
     </details>
 
-    <!-- Legend bottom-left -->
+    <!-- Legend -->
     <details id="legend" class="legend">
       <summary>➕ Teckenförklaring</summary>
       <div class="content" id="catsExplain"></div>
@@ -154,14 +241,34 @@
   </div>
 </div>
 
-<!-- Leaflet + plugins -->
+<!-- Söksyntax-overlay -->
+<div class="help-overlay" id="helpOverlay">
+  <div class="help-box">
+    <button class="help-close" onclick="closeHelp()">×</button>
+    <h3>🔎 Söksyntax</h3>
+    <table>
+      <tr><td>drönare</td><td>Fritext – matchar titel, sammanfattning, plats</td></tr>
+      <tr><td>"rysk ubåt"</td><td>Exakt fras (citattecken)</td></tr>
+      <tr><td>cat:DRONE</td><td>Filtrera på kategori (DRONE, INFRA, INTEL, MIL, HYBRID, TERROR, MAR, GPS, NUCLEAR, LEGAL, POLICY)</td></tr>
+      <tr><td>cat:drönare</td><td>Alias funkar – t.ex. drönare, sabotage, spion</td></tr>
+      <tr><td>country:SE</td><td>Filtrera på landskod</td></tr>
+      <tr><td>country:Sverige</td><td>Eller landets svenska namn</td></tr>
+      <tr><td>city:Berlin</td><td>Filtrera på stad/ort</td></tr>
+      <tr><td>2025-09-01–2025-10-01</td><td>Datumintervall (ISO-format)</td></tr>
+      <tr><td>cat:INFRA city:Oslo</td><td>Kombinera flera prefix</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" crossorigin="anonymous"></script>
-
 <script>
-/* =====================================================
- * 0) DATA – klistra in händelserna här
- * ===================================================== */
+/* ===================================================
+ * DATA
+ * =================================================== */
 const EVENTS = [
     // Sverige
   {country:'SE',cat:'HYBRID',title:'Misstänkta konton söker drönarpiloter i forum',place:'Sverige (online)',date:'2025-10-05',lat:59.334,lng:18.067,summary:'Nya, misstänkta Facebook-konton erbjuder betalning för flygningar nära skyddsobjekt, och de verkar veta vilka de ska rikta in sig på. Administratörer tar bort profiler varje vecka.',url:'https://www.sverigesradio.se/artikel/dronarpiloter-soks-upp-pa-facebook-for-att-spana-pa-skyddsobjekt',source:'Sveriges Radio (2025)'},
@@ -3368,6 +3475,10 @@ const EVENTS = [
 ];
 
 /* Kategorier + (valfria) ikoner */
+
+/* ===================================================
+ * CATS + ALIASES (oförändrade från original)
+ * =================================================== */
 const CATS = {
   DRONE:   { label:'Drönare / UAV',             emoji:'🛩️', color:'#b9e3ff', desc:'Incidenter med UAV/drönare.', iconUrl:'' },
   INFRA:   { label:'Infrastruktur / sabotage',  emoji:'⚡',  color:'#ffe08a', desc:'Kritisk infrastruktur, sabotage, störningar.', iconUrl:'' },
@@ -3396,237 +3507,495 @@ const CAT_ALIASES = {
   GPS:['gps','gnss','jamming','störning','spoof'],
   POLICY:['politik','policy','myndighet','lag','förordning']
 };
-const COUNTRY_ALIASES = {
-  SE:['sverige','sweden','sv'], NO:['norge','norway'], DK:['danmark','denmark'],
-  FI:['finland'], DE:['tyskland','germany','deutschland'], PL:['polen','poland'],
-  UA:['ukraina','ukraine'], EU:['eu','europe','europa']
+
+
+
+/* ===================================================
+ * LANDNAMN (komplett mappning)
+ * =================================================== */
+const COUNTRY_NAMES = {
+  SE:'Sverige',NO:'Norge',DK:'Danmark',FI:'Finland',IS:'Island',GL:'Grönland',FO:'Färöarna',
+  DE:'Tyskland',FR:'Frankrike',UK:'Storbritannien',GB:'Storbritannien',
+  NL:'Nederländerna',BE:'Belgien',AT:'Österrike',CH:'Schweiz',
+  ES:'Spanien',IT:'Italien',PT:'Portugal',IE:'Irland',LU:'Luxemburg',
+  PL:'Polen',CZ:'Tjeckien',SK:'Slovakien',HU:'Ungern',
+  RO:'Rumänien',BG:'Bulgarien',HR:'Kroatien',SI:'Slovenien',
+  RS:'Serbien',BA:'Bosnien och Hercegovina',ME:'Montenegro',
+  MK:'Nordmakedonien',AL:'Albanien',XK:'Kosovo',CY:'Cypern',GR:'Grekland',
+  EE:'Estland',LV:'Lettland',LT:'Litauen',
+  RU:'Ryssland',UA:'Ukraina',BY:'Belarus',MD:'Moldavien',
+  GE:'Georgien',AM:'Armenien',AZ:'Azerbajdzjan',KG:'Kirgizistan',TM:'Turkmenistan',
+  TR:'Turkiet',IR:'Iran',IL:'Israel',PS:'Palestina',
+  SY:'Syrien',SA:'Saudiarabien',AE:'Förenade Arabemiraten',QA:'Qatar',
+  BH:'Bahrain',YE:'Jemen',JO:'Jordanien',IQ:'Irak',
+  CN:'Kina',HK:'Hongkong',TW:'Taiwan',JP:'Japan',
+  KR:'Sydkorea',KP:'Nordkorea',IN:'Indien',VN:'Vietnam',
+  MY:'Malaysia',PH:'Filippinerna',PG:'Papua Nya Guinea',
+  NZ:'Nya Zeeland',AU:'Australien',
+  US:'USA',CA:'Kanada',MX:'Mexiko',BR:'Brasilien',
+  AR:'Argentina',VE:'Venezuela',EC:'Ecuador',CU:'Kuba',CR:'Costa Rica',
+  ZA:'Sydafrika',DZ:'Algeriet',ML:'Mali',TG:'Togo',
+  MG:'Madagaskar',SC:'Seychellerna',ER:'Eritrea',
+  EU:'EU (multinationellt)',INT:'Internationellt',AQ:'Antarktis',
 };
-const GAZETTEER = {
-  'stockholm':{lat:59.3293,lng:18.0686,country:'SE'},
-  'göteborg':{lat:57.7089,lng:11.9746,country:'SE'},
-  'goteborg':{lat:57.7089,lng:11.9746,country:'SE'},
-  'malmö':{lat:55.6050,lng:13.0038,country:'SE'},
-  'malmo':{lat:55.6050,lng:13.0038,country:'SE'},
-  'oslo':{lat:59.9139,lng:10.7522,country:'NO'},
-  'köpenhamn':{lat:55.6761,lng:12.5683,country:'DK'},
-  'kobenhavn':{lat:55.6761,lng:12.5683,country:'DK'},
-  'helsingfors':{lat:60.1699,lng:24.9384,country:'FI'},
-  'helsinki':{lat:60.1699,lng:24.9384,country:'FI'}
+function countryName(code){ return COUNTRY_NAMES[code] || code; }
+
+/* Utökade COUNTRY_ALIASES för sökning med landnamn */
+const COUNTRY_ALIASES = {
+  SE:['sverige','sweden','sv'],NO:['norge','norway'],DK:['danmark','denmark'],
+  FI:['finland'],IS:['island','iceland'],GL:['grönland','gronland','greenland'],
+  DE:['tyskland','germany','deutschland'],FR:['frankrike','france'],
+  UK:['storbritannien','united kingdom','britain'],GB:['storbritannien','great britain'],
+  NL:['nederländerna','nederlanderna','netherlands','holland'],
+  BE:['belgien','belgium'],AT:['österrike','osterrike','austria'],
+  CH:['schweiz','switzerland'],ES:['spanien','spain'],IT:['italien','italy'],
+  PT:['portugal'],IE:['irland','ireland'],PL:['polen','poland'],
+  CZ:['tjeckien','czech','czechia'],SK:['slovakien','slovakia'],
+  HU:['ungern','hungary'],RO:['rumänien','rumanien','romania'],
+  BG:['bulgarien','bulgaria'],HR:['kroatien','croatia'],
+  RS:['serbien','serbia'],ME:['montenegro'],MK:['nordmakedonien','north macedonia'],
+  AL:['albanien','albania'],GR:['grekland','greece'],CY:['cypern','cyprus'],
+  EE:['estland','estonia'],LV:['lettland','latvia'],LT:['litauen','lithuania'],
+  RU:['ryssland','russia'],UA:['ukraina','ukraine'],BY:['belarus','vitryssland'],
+  MD:['moldavien','moldova'],GE:['georgien','georgia'],AM:['armenien','armenia'],
+  AZ:['azerbajdzjan','azerbaijan'],TR:['turkiet','turkey'],
+  IR:['iran'],IL:['israel'],SY:['syrien','syria'],SA:['saudiarabien','saudi arabia'],
+  AE:['förenade arabemiraten','uae','emirates'],IQ:['irak','iraq'],
+  CN:['kina','china'],HK:['hongkong'],TW:['taiwan'],JP:['japan'],
+  KR:['sydkorea','south korea'],KP:['nordkorea','north korea'],IN:['indien','india'],
+  AU:['australien','australia'],NZ:['nya zeeland','new zealand'],
+  US:['usa','united states','america'],CA:['kanada','canada'],
+  MX:['mexiko','mexico'],BR:['brasilien','brazil'],AR:['argentina'],
+  EU:['eu','europe','europa'],
 };
 
-/* 1) MAP */
-const map = L.map('map', { zoomSnap:.5, worldCopyJump:true }).setView([56.2, 12.9], 4);
-L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom:19, attribution:'&copy; OpenStreetMap'
-}).addTo(map);
-const cluster = L.markerClusterGroup({ disableClusteringAtZoom:10, spiderfyOnMaxZoom:true });
+/* ===================================================
+ * 1) KARTA
+ * =================================================== */
+const map = L.map('map',{zoomSnap:.5,worldCopyJump:true}).setView([56.2,12.9],4);
+
+const TILE_LAYERS = {
+  'Ljus (standard)': L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{
+    maxZoom:19, subdomains:'abcd',
+    attribution:'&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+  }),
+  'Mörk': L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
+    maxZoom:19, subdomains:'abcd',
+    attribution:'&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+  }),
+  'Satellit': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{
+    maxZoom:19,
+    attribution:'&copy; <a href="https://www.esri.com/">Esri</a>, Maxar, Earthstar Geographics'
+  }),
+  'Topografi': L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{
+    maxZoom:17, subdomains:'abc',
+    attribution:'&copy; <a href="https://opentopomap.org/">OpenTopoMap</a> &copy; OpenStreetMap'
+  }),
+};
+
+TILE_LAYERS['Ljus (standard)'].addTo(map);
+L.control.layers(TILE_LAYERS, {}, {position:'topright', collapsed:true}).addTo(map);
+
+const cluster = L.markerClusterGroup({disableClusteringAtZoom:10,spiderfyOnMaxZoom:true});
 map.addLayer(cluster);
 
-/* 2) HELPERS */
-const $ = s => document.querySelector(s);
-const strip = s => (s||'').toString().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-const norm = s => strip(s).toLowerCase().trim();
-function fmtDate(d){ if(!d) return ''; const y=d.getUTCFullYear(), m=String(d.getUTCMonth()+1).padStart(2,'0'), da=String(d.getUTCDate()).padStart(2,'0'); return `${y}-${m}-${da}`; }
+// Lås-vy: håll koll på om användaren rört kartan manuellt
+let viewLocked = false;
+let userMovedMap = false;
+let _isInitialLoad = true;
+map.on('dragstart',()=>{ userMovedMap=true; });
+// Tillåt scroll-zoom normalt men återställ inte userMovedMap vid scroll
+map.scrollWheelZoom.enable();
+
+/* ===================================================
+ * 2) HELPERS
+ * =================================================== */
+const $ = s=>document.querySelector(s);
+const strip = s=>(s||'').toString().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+const norm = s=>strip(s).toLowerCase().trim();
+function fmtDate(d){if(!d)return'';const y=d.getUTCFullYear(),m=String(d.getUTCMonth()+1).padStart(2,'0'),da=String(d.getUTCDate()).padStart(2,'0');return`${y}-${m}-${da}`;}
 function parseYMD(s){
-  if(!s) return null; const m=String(s).match(/^(\d{4})[.\-\/](\d{1,2})[.\-\/](\d{1,2})\.?$/); if(!m) return null;
-  const y=+m[1], mo=+m[2], d=+m[3]; if(mo<1||mo>12||d<1||d>31) return null;
-  const dt=new Date(Date.UTC(y,mo-1,d)); if(dt.getUTCFullYear()!==y||(dt.getUTCMonth()+1)!==mo||dt.getUTCDate()!==d) return null; return dt;
+  if(!s)return null;const m=String(s).match(/^(\d{4})[.\-\/](\d{1,2})[.\-\/](\d{1,2})\.?$/);if(!m)return null;
+  const y=+m[1],mo=+m[2],d=+m[3];if(mo<1||mo>12||d<1||d>31)return null;
+  const dt=new Date(Date.UTC(y,mo-1,d));if(dt.getUTCFullYear()!==y||(dt.getUTCMonth()+1)!==mo||dt.getUTCDate()!==d)return null;return dt;
 }
-const sod = dt => new Date(Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth(), dt.getUTCDate(), 0,0,0,0));
-const eod = dt => new Date(Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth(), dt.getUTCDate(),23,59,59,999));
+const sod=dt=>new Date(Date.UTC(dt.getUTCFullYear(),dt.getUTCMonth(),dt.getUTCDate(),0,0,0,0));
+const eod=dt=>new Date(Date.UTC(dt.getUTCFullYear(),dt.getUTCMonth(),dt.getUTCDate(),23,59,59,999));
 function extractDateRange(raw){
-  if(!raw) return {after:null,before:null,cleaned:''}; let s=String(raw);
+  if(!raw)return{after:null,before:null,cleaned:''};let s=String(raw);
   const reRange=/(\d{4}[.\-\/]\d{1,2}[.\-\/]\d{1,2})\.?\s*[—–-]\s*(\d{4}[.\-\/]\d{1,2}[.\-\/]\d{1,2})\.?/u;
-  const m=s.match(reRange); if(m){ const d1=parseYMD(m[1]), d2=parseYMD(m[2]); if(d1&&d2){ const cleaned=(s.slice(0,m.index)+s.slice(m.index+m[0].length)).replace(/\s{2,}/g,' ').trim(); return {after:sod(d1), before:eod(d2), cleaned}; } }
-  let after=null, before=null;
+  const m=s.match(reRange);if(m){const d1=parseYMD(m[1]),d2=parseYMD(m[2]);if(d1&&d2){const cleaned=(s.slice(0,m.index)+s.slice(m.index+m[0].length)).replace(/\s{2,}/g,' ').trim();return{after:sod(d1),before:eod(d2),cleaned};}}
+  let after=null,before=null;
   const ge=s.match(/(?:>=|after:)\s*(\d{4}[.\-\/]\d{1,2}[.\-\/]\d{1,2})/i);
   const le=s.match(/(?:<=|before:)\s*(\d{4}[.\-\/]\d{1,2}[.\-\/]\d{1,2})/i);
-  if(ge){ const d=parseYMD(ge[1]); if(d) after=sod(d); s=s.replace(ge[0],''); }
-  if(le){ const d=parseYMD(le[1]); if(d) before=eod(d); s=s.replace(le[0],''); }
-  return {after,before,cleaned:s.replace(/\s{2,}/g,' ').trim()};
+  if(ge){const d=parseYMD(ge[1]);if(d)after=sod(d);s=s.replace(ge[0],'');}
+  if(le){const d=parseYMD(le[1]);if(d)before=eod(d);s=s.replace(le[0],'');}
+  return{after,before,cleaned:s.replace(/\s{2,}/g,' ').trim()};
 }
 function eventSpan(e){
-  if(e.start||e.end){ const s=parseYMD(e.start||e.date), t=parseYMD(e.end||e.date); return {start:s? sod(s):null, end:t? eod(t):null}; }
-  const d=parseYMD(e.date); return d? {start:sod(d), end:eod(d)} : {start:null, end:null};
+  if(e.start||e.end){const s=parseYMD(e.start||e.date),t=parseYMD(e.end||e.date);return{start:s?sod(s):null,end:t?eod(t):null};}
+  const d=parseYMD(e.date);return d?{start:sod(d),end:eod(d)}:{start:null,end:null};
 }
-function eventId(e){ if(e.id) return e.id; const key=`${e.title||''}|${e.date||e.start||''}|${e.country||''}|${e.place||''}`; let h=0; for(let i=0;i<key.length;i++){ h=((h<<5)-h)+key.charCodeAt(i); h|=0; } return 'e'+Math.abs(h); }
-function isValidCoord(lat,lng){ return typeof lat==='number' && typeof lng==='number' && isFinite(lat)&&isFinite(lng)&&Math.abs(lat)<=90&&Math.abs(lng)<=180; }
-function fromGazetteer(text){
-  if(!text) return null; const n=norm(text); if(GAZETTEER[n]) return GAZETTEER[n];
-  const tokens=n.split(/[,;()\-–—\s]+/).filter(Boolean); for(const t of tokens){ if(GAZETTEER[t]) return GAZETTEER[t]; } return null;
+function eventId(e){
+  if(e.id)return e.id;
+  const key=`${e.title||''}|${e.date||e.start||''}|${e.country||''}|${e.place||''}`;
+  let h=0;for(let i=0;i<key.length;i++){h=((h<<5)-h)+key.charCodeAt(i);h|=0;}
+  return'e'+Math.abs(h);
 }
-function enrichEvent(e){ if(isValidCoord(e.lat,e.lng)) return e; let g=fromGazetteer(e.city||e.place); if(g){ e.lat=g.lat; e.lng=g.lng; e.country=e.country||g.country; } return e; }
+function isValidCoord(lat,lng){return typeof lat==='number'&&typeof lng==='number'&&isFinite(lat)&&isFinite(lng)&&Math.abs(lat)<=90&&Math.abs(lng)<=180;}
+const GAZETTEER={
+  'stockholm':{lat:59.3293,lng:18.0686,country:'SE'},'göteborg':{lat:57.7089,lng:11.9746,country:'SE'},
+  'goteborg':{lat:57.7089,lng:11.9746,country:'SE'},'malmö':{lat:55.6050,lng:13.0038,country:'SE'},
+  'malmo':{lat:55.6050,lng:13.0038,country:'SE'},'oslo':{lat:59.9139,lng:10.7522,country:'NO'},
+  'köpenhamn':{lat:55.6761,lng:12.5683,country:'DK'},'kobenhavn':{lat:55.6761,lng:12.5683,country:'DK'},
+  'helsingfors':{lat:60.1699,lng:24.9384,country:'FI'},'helsinki':{lat:60.1699,lng:24.9384,country:'FI'}
+};
+function fromGazetteer(text){if(!text)return null;const n=norm(text);if(GAZETTEER[n])return GAZETTEER[n];const tokens=n.split(/[,;()\-–—\s]+/).filter(Boolean);for(const t of tokens){if(GAZETTEER[t])return GAZETTEER[t];}return null;}
+function enrichEvent(e){if(isValidCoord(e.lat,e.lng))return e;let g=fromGazetteer(e.city||e.place);if(g){e.lat=g.lat;e.lng=g.lng;e.country=e.country||g.country;}return e;}
 
-/* 3) ICONS */
+function showToast(msg,ms=1800){
+  const t=$('#toast');t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),ms);
+}
+
+/* ===================================================
+ * 3) IKONER
+ * =================================================== */
 function buildIcon(e){
-  const meta=CATS[e.cat||'']||{}; const url=e.iconUrl||meta.iconUrl;
-  if(url){ return L.icon({ iconUrl:url, iconSize:e.iconSize||meta.iconSize||[30,30], iconAnchor:e.iconAnchor||meta.iconAnchor||[15,30], popupAnchor:[0,-24] }); }
-  const color=meta.color||'#cfd6df'; const emoji=meta.emoji||'📍';
+  const meta=CATS[e.cat||'']||{};const url=e.iconUrl||meta.iconUrl;
+  if(url){return L.icon({iconUrl:url,iconSize:e.iconSize||meta.iconSize||[30,30],iconAnchor:e.iconAnchor||meta.iconAnchor||[15,30],popupAnchor:[0,-24]});}
+  const color=meta.color||'#cfd6df';const emoji=meta.emoji||'📍';
   const html=`<div style="position:relative;width:30px;height:30px;border-radius:50%;background:${color};border:2px solid #0003;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.25)"><div style="font-size:16px;filter:drop-shadow(0 1px 0 #0007)">${emoji}</div><div style="position:absolute;bottom:-7px;left:50%;transform:translateX(-50%) rotate(45deg);width:10px;height:10px;background:${color};border-right:2px solid #0003;border-bottom:2px solid #0003"></div></div>`;
-  return L.divIcon({ html, className:'', iconSize:[30,36], iconAnchor:[15,30] });
+  return L.divIcon({html,className:'',iconSize:[30,36],iconAnchor:[15,30]});
 }
 
-/* 4) FILTER STATE */
-const ACTIVE = { cats:new Set(Object.keys(CATS)), focus:'' , single:false };
+/* ===================================================
+ * 4) FILTERSTATE
+ * =================================================== */
+const ACTIVE={cats:new Set(Object.keys(CATS)),countries:new Set(),single:false};
+
+/* Kategori-UI */
 function renderCatsUI(){
-  const host = $('#cats'); host.innerHTML='';
+  const host=$('#cats');host.innerHTML='';
   Object.entries(CATS).forEach(([key,meta])=>{
-    const row=document.createElement('div'); row.className='catrow';
-    row.innerHTML=`<input class="sw" type="checkbox" id="c_${key}" ${ACTIVE.cats.has(key)?'checked':''}>
-                   <label for="c_${key}"><span>${meta.emoji||'📍'}</span><span>${meta.label||key}</span></label>`;
+    const row=document.createElement('div');row.className='catrow';
+    row.innerHTML=`<input class="sw" type="checkbox" id="c_${key}" ${ACTIVE.cats.has(key)?'checked':''}><label for="c_${key}"><span>${meta.emoji||'📍'}</span><span>${meta.label||key}</span></label>`;
     host.appendChild(row);
-    row.querySelector('input').addEventListener('change', ev=>{
-      if(ACTIVE.single){ ACTIVE.cats.clear(); if(ev.target.checked) ACTIVE.cats.add(key); ACTIVE.single=false; }
-      else{ if(ev.target.checked) ACTIVE.cats.add(key); else ACTIVE.cats.delete(key); }
+    row.querySelector('input').addEventListener('change',ev=>{
+      if(ACTIVE.single){ACTIVE.cats.clear();if(ev.target.checked)ACTIVE.cats.add(key);ACTIVE.single=false;}
+      else{if(ev.target.checked)ACTIVE.cats.add(key);else ACTIVE.cats.delete(key);}
       update();
     });
   });
-  $('#catsAll').onclick=()=>{ ACTIVE.cats=new Set(Object.keys(CATS)); renderCatsUI(); update(); };
-  $('#catsNone').onclick=()=>{ ACTIVE.cats.clear(); renderCatsUI(); update(); };
-  $('#catsOnly').onclick=()=>{ ACTIVE.single=true; };
+  $('#catsAll').onclick=()=>{ACTIVE.cats=new Set(Object.keys(CATS));renderCatsUI();update();};
+  $('#catsNone').onclick=()=>{ACTIVE.cats.clear();renderCatsUI();update();};
+  $('#catsOnly').onclick=()=>{ACTIVE.single=true;};
 }
 function renderCatsExplain(){
-  const host=$('#catsExplain'); host.innerHTML='';
+  const host=$('#catsExplain');host.innerHTML='';
   Object.entries(CATS).forEach(([k,m])=>{
-    const row=document.createElement('div'); row.className='row';
-    row.innerHTML=`<div class="emoji">${m.emoji||'📍'}</div>
-      <div><div class="name">${m.label||k} <span style="color:#778;font-weight:400">(${k})</span></div>
-      <div class="desc">${m.desc||''}</div></div>`;
+    const row=document.createElement('div');row.className='row';
+    row.innerHTML=`<div class="emoji">${m.emoji||'📍'}</div><div><div class="name">${m.label||k} <span style="color:#778;font-weight:400">(${k})</span></div><div class="desc">${m.desc||''}</div></div>`;
     host.appendChild(row);
   });
 }
 
-/* 5) QUERY */
-function parseQueryPieces(q){ const parts=[]; const re=/"([^"]+)"|(\S+)/g; let m; while((m=re.exec(q))){ parts.push(m[1]||m[2]); } return parts; }
-function matches(e, raw){
-  if(ACTIVE.focus && (e.country||'').toUpperCase()!==ACTIVE.focus.toUpperCase()) return false;
-  if(ACTIVE.cats.size && !ACTIVE.cats.has(e.cat||'')) return false;
-  if(!raw||!raw.trim()) return true;
-  const {after,before,cleaned}=extractDateRange(raw); const span=eventSpan(e);
-  if(after && span.end && span.end<after) return false; if(before && span.start && span.start>before) return false;
+/* ===================================================
+ * 5) LANDFILTER MULTI-SELECT
+ * =================================================== */
+// Bygg kodlista dynamiskt från EVENTS
+const allCodes=[...new Set(EVENTS.map(e=>e.country||'').filter(Boolean))].sort((a,b)=>countryName(a).localeCompare(countryName(b),'sv'));
+const codeCount={};EVENTS.forEach(e=>{if(e.country)codeCount[e.country]=(codeCount[e.country]||0)+1;});
+
+function renderCountryList(){
+  const q=norm($('#countrySearch').value||'');
+  const list=$('#countryList');list.innerHTML='';
+  allCodes.forEach(code=>{
+    const name=countryName(code);
+    if(q&&!norm(name).includes(q)&&!norm(code).includes(q))return;
+    const sel=ACTIVE.countries.has(code);
+    const item=document.createElement('div');
+    item.className='c-item'+(sel?' sel':'');
+    item.setAttribute('role','option');item.setAttribute('aria-selected',sel);
+    item.innerHTML=`<input type="checkbox" ${sel?'checked':''} aria-label="${name}"><span>${name}</span><span class="cbadge">${codeCount[code]||0}</span>`;
+    item.addEventListener('click',()=>toggleCountry(code));
+    list.appendChild(item);
+  });
+}
+function toggleCountry(code){
+  if(ACTIVE.countries.has(code))ACTIVE.countries.delete(code);else ACTIVE.countries.add(code);
+  updateCountryBtn();renderCountryList();update();
+}
+function selectAllCountries(){allCodes.forEach(c=>ACTIVE.countries.add(c));updateCountryBtn();renderCountryList();update();}
+function clearCountries(){ACTIVE.countries.clear();updateCountryBtn();renderCountryList();update();}
+function updateCountryBtn(){
+  const btn=$('#countryBtn'),lbl=$('#countryBtnLbl'),n=ACTIVE.countries.size;
+  if(n===0){lbl.textContent='🌍 Alla länder';btn.classList.remove('has-sel');}
+  else if(n===1){lbl.textContent=countryName([...ACTIVE.countries][0]);btn.classList.add('has-sel');}
+  else{lbl.textContent=`${n} länder valda`;btn.classList.add('has-sel');}
+}
+function toggleCountryDd(){
+  const dd=$('#countryDd'),btn=$('#countryBtn'),open=dd.classList.toggle('open');
+  btn.classList.toggle('open',open);btn.setAttribute('aria-expanded',open);
+  if(open){$('#countrySearch').value='';renderCountryList();setTimeout(()=>$('#countrySearch').focus(),40);}
+}
+document.addEventListener('click',e=>{
+  const w=$('#countryWrap');
+  if(w&&!w.contains(e.target)){$('#countryDd').classList.remove('open');$('#countryBtn').classList.remove('open');$('#countryBtn').setAttribute('aria-expanded',false);}
+});
+
+/* ===================================================
+ * 6) SÖKNING / MATCHNING
+ * =================================================== */
+function parseQueryPieces(q){const parts=[];const re=/"([^"]+)"|(\S+)/g;let m;while((m=re.exec(q))){parts.push(m[1]||m[2]);}return parts;}
+function matches(e,raw){
+  // Kategorifilter
+  if(ACTIVE.cats.size&&!ACTIVE.cats.has(e.cat||''))return false;
+  // Landfilter (multi-select)
+  if(ACTIVE.countries.size&&!ACTIVE.countries.has(e.country||''))return false;
+  if(!raw||!raw.trim())return true;
+  const{after,before,cleaned}=extractDateRange(raw);const span=eventSpan(e);
+  if(after&&span.end&&span.end<after)return false;if(before&&span.start&&span.start>before)return false;
   const field={cat:null,country:null,city:null};
-  const fieldRe=/\b(cat|kategori|country|land|city|stad):\s*("[^"]+"|[^\s]+)/gi; let rest=cleaned, fm;
-  while((fm=fieldRe.exec(cleaned))){ const key=fm[1].toLowerCase(); const val=fm[2].replace(/^"|"$|^'|'$/g,''); if(key==='cat'||key==='kategori') field.cat=val; else if(key==='country'||key==='land') field.country=val; else field.city=val; rest=rest.replace(fm[0],''); }
+  const fieldRe=/\b(cat|kategori|country|land|city|stad):\s*("[^"]+"|[^\s]+)/gi;let rest=cleaned,fm;
+  while((fm=fieldRe.exec(cleaned))){const key=fm[1].toLowerCase();const val=fm[2].replace(/^"|"$|^'|'$/g,'');if(key==='cat'||key==='kategori')field.cat=val;else if(key==='country'||key==='land')field.country=val;else field.city=val;rest=rest.replace(fm[0],'');}
   rest=rest.replace(/\s{2,}/g,' ').trim();
-  const hay=[e.title,e.summary,e.place,e.city,e.source,e.country,(CATS[e.cat||'']||{}).label,e.cat].map(x=>norm(x)).join(' ');
-  if(field.cat){ const want=norm(field.cat); const key=(e.cat||'').toUpperCase(); const aliases=(CAT_ALIASES[key]||[]).map(norm); const ok=key.includes(want.toUpperCase()) || (CATS[key]?.label && norm(CATS[key].label).includes(want)) || aliases.some(a=>a.includes(want)||want.includes(a)); if(!ok) return false; }
-  if(field.country){ const want=norm(field.country); const cc=(e.country||'').toUpperCase(); const ali=(COUNTRY_ALIASES[cc]||[]).map(norm); const ok=cc.includes(want.toUpperCase()) || ali.includes(want); if(!ok) return false; }
-  if(field.city){ const want=norm(field.city); const ok=(norm(e.city||'')).includes(want) || (norm(e.place||'')).includes(want); if(!ok) return false; }
-  for(const t of parseQueryPieces(rest).map(norm).filter(Boolean)){ if(!hay.includes(t)) return false; }
+  const hay=[e.title,e.summary,e.place,e.city,e.source,e.country,countryName(e.country||''),(CATS[e.cat||'']||{}).label,e.cat].map(x=>norm(x)).join(' ');
+  if(field.cat){const want=norm(field.cat);const key=(e.cat||'').toUpperCase();const aliases=(CAT_ALIASES[key]||[]).map(norm);const ok=key.includes(want.toUpperCase())||(CATS[key]?.label&&norm(CATS[key].label).includes(want))||aliases.some(a=>a.includes(want)||want.includes(a));if(!ok)return false;}
+  if(field.country){const want=norm(field.country);const cc=(e.country||'').toUpperCase();const ali=(COUNTRY_ALIASES[cc]||[]).map(norm);const ok=cc.toLowerCase()===want||norm(countryName(cc))===want||ali.some(a=>a===want||a.includes(want));if(!ok)return false;}
+  if(field.city){const want=norm(field.city);const ok=(norm(e.city||'')).includes(want)||(norm(e.place||'')).includes(want);if(!ok)return false;}
+  for(const t of parseQueryPieces(rest).map(norm).filter(Boolean)){if(!hay.includes(t))return false;}
   return true;
 }
 
-/* 6) RENDER */
-const markersById=new Map();
-function escapeHtml(s){ return (s||'').toString().replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
-function buildPermalink(id){
-  const u=new URL(location.href);
-  const f=new URLSearchParams(u.search); const q=$('#q').value||''; const focus=$('#focus').value||'';
-  if(q) f.set('q', q); else f.delete('q'); if(focus) f.set('focus', focus); else f.delete('focus');
-  f.set('id', id); return `${location.pathname}?${f.toString()}`;
+/* ===================================================
+ * 7) SORTERING
+ * =================================================== */
+let currentSortedList=[];
+function sortList(list){
+  const s=$('#sortSel').value;
+  return[...list].sort((a,b)=>{
+    if(s==='newest')return(parseYMD(b.date)||new Date(0))-(parseYMD(a.date)||new Date(0));
+    if(s==='oldest')return(parseYMD(a.date)||new Date(0))-(parseYMD(b.date)||new Date(0));
+    if(s==='country')return countryName(a.country||'').localeCompare(countryName(b.country||''),'sv');
+    if(s==='cat')return(CATS[a.cat||'']?.label||a.cat||'').localeCompare(CATS[b.cat||'']?.label||b.cat||'','sv');
+    return 0;
+  });
 }
+function applySort(){currentSortedList=sortList(currentSortedList);renderList(currentSortedList);}
+
+/* ===================================================
+ * 8) PERMALÄNK – FIXAD
+ * =================================================== */
+function escapeHtml(s){return(s||'').toString().replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));}
+
+function buildPermalink(id){
+  // Enkoda ENBART händelse-ID + nuvarande sökterm i URL
+  // Landfilter och kategorier följer med som separata params
+  const f=new URLSearchParams();
+  const q=$('#q').value||'';if(q)f.set('q',q);
+  // Aktiva länder
+  if(ACTIVE.countries.size)f.set('countries',[...ACTIVE.countries].join(','));
+  // Inaktiva kategorier (sparar bara avvikelser från "alla")
+  const allCats=Object.keys(CATS);
+  const inactiveCats=allCats.filter(c=>!ACTIVE.cats.has(c));
+  if(inactiveCats.length)f.set('cats_off',inactiveCats.join(','));
+  // Händelse-ID
+  if(id)f.set('id',id);
+  return`${location.pathname}?${f.toString()}`;
+}
+
+function copyPermalink(id){
+  const url=location.origin+location.pathname+'?'+new URLSearchParams(
+    Object.fromEntries(new URLSearchParams(buildPermalink(id).split('?')[1]))
+  ).toString();
+  navigator.clipboard.writeText(url).then(()=>showToast('✔ Länk kopierad!')).catch(()=>{
+    const i=document.createElement('input');i.value=url;document.body.appendChild(i);i.select();document.execCommand('copy');document.body.removeChild(i);showToast('✔ Länk kopierad!');
+  });
+}
+
+function setUrlState(id){
+  const f=new URLSearchParams();
+  const q=$('#q').value||'';if(q)f.set('q',q);
+  if(ACTIVE.countries.size)f.set('countries',[...ACTIVE.countries].join(','));
+  const allCats=Object.keys(CATS);
+  const inactiveCats=allCats.filter(c=>!ACTIVE.cats.has(c));
+  if(inactiveCats.length)f.set('cats_off',inactiveCats.join(','));
+  if(id)f.set('id',id);else f.delete('id');
+  history.replaceState(null,'',`${location.pathname}?${f.toString()}`);
+}
+
+function readFromURL(){
+  const u=new URL(location.href);
+  const q=u.searchParams.get('q')||'';
+  if(q){$('#q').value=q;}
+  // Länder
+  const countriesParam=u.searchParams.get('countries')||'';
+  if(countriesParam){countriesParam.split(',').forEach(c=>{if(c)ACTIVE.countries.add(c.trim());});updateCountryBtn();renderCountryList();}
+  // Kategorier av
+  const catsOff=u.searchParams.get('cats_off')||'';
+  if(catsOff){catsOff.split(',').forEach(c=>{ACTIVE.cats.delete(c.trim());});renderCatsUI();}
+  // Öppna specifik händelse
+  const openId=u.searchParams.get('id')||'';
+  update(openId);
+}
+
+/* ===================================================
+ * 9) RENDER
+ * =================================================== */
+const markersById=new Map();
+
 function popupHtml(e){
-  const meta=CATS[e.cat||'']||{}; const cat=meta.label||(e.cat||'Okänd'); const emoji=meta.emoji||'📍';
-  const dateStr= e.start||e.end ? [ e.start?fmtDate(parseYMD(e.start)):'', e.end?fmtDate(parseYMD(e.end)):'' ].filter(Boolean).join('–') : (e.date||'');
-  const src=e.source? ` • <span>${escapeHtml(e.source)}</span>`:'';
-  const link=e.url? `<div style="margin-top:.35rem"><a href="${encodeURI(e.url)}" target="_blank" rel="noopener" style="color:#0d6efd">Öppna källa</a></div>`:'';
-  const pl=`<div style="margin-top:.25rem"><a href="${buildPermalink(eventId(e))}" style="color:#0d6efd">Permalänk</a></div>`;
-  return `<div style="min-width:260px">
+  const meta=CATS[e.cat||'']||{};const cat=meta.label||(e.cat||'Okänd');const emoji=meta.emoji||'📍';
+  const dateStr=e.start||e.end?[e.start?fmtDate(parseYMD(e.start)):'',e.end?fmtDate(parseYMD(e.end)):''].filter(Boolean).join('–'):(e.date||'');
+  const src=e.source?` • <span>${escapeHtml(e.source)}</span>`:'';
+  const id=eventId(e);
+  const link=e.url?`<div style="margin-top:.35rem"><a href="${encodeURI(e.url)}" target="_blank" rel="noopener" style="color:#0d6efd">Öppna källa</a></div>`:'';
+  // Kopierbar permalänk direkt i popup
+  const plUrl=location.origin+buildPermalink(id).replace(/^[^?]*/,'');
+  const pl=`<div style="margin-top:.3rem;display:flex;align-items:center;gap:.4rem">
+    <button onclick="copyPermalink('${id}')" style="font-size:12px;padding:3px 10px;border-radius:8px;background:#eef2f7;border:1px solid #d0d7de;cursor:pointer;color:#0d6efd">📋 Kopiera länk</button>
+    <span style="font-size:11px;color:#889;font-family:monospace;overflow:hidden;text-overflow:ellipsis;max-width:150px">${escapeHtml('?id='+id)}</span>
+  </div>`;
+  return`<div style="min-width:260px;max-width:300px">
     <div style="font-weight:700;margin-bottom:4px">${emoji} ${escapeHtml(e.title||'Händelse')}</div>
-    <div style="color:#667">${escapeHtml(e.place||e.city||'')}</div>
-    <div style="margin:.35rem 0 .25rem 0">${escapeHtml(e.summary||'')}</div>
+    <div style="color:#667">${escapeHtml(e.place||e.city||'')} · ${escapeHtml(countryName(e.country||''))}</div>
+    <div style="margin:.35rem 0 .25rem 0;font-size:13px">${escapeHtml(e.summary||'')}</div>
     <div style="font-size:12px;color:#667"><span>${escapeHtml(cat)}</span> • <span>${escapeHtml(dateStr)}</span>${src}</div>
     ${link}${pl}
-    <div style="margin-top:.35rem;font-size:12px;color:#667">ID: ${escapeHtml(eventId(e))}</div>
   </div>`;
 }
+
 function renderList(list){
-  const host=$('#list'); host.innerHTML='';
+  const host=$('#list');host.innerHTML='';
   list.forEach(e=>{
-    const el=document.createElement('div'); el.className='item';
-    const id=eventId(e); const pl=buildPermalink(id);
+    const el=document.createElement('div');el.className='item';
+    const id=eventId(e);
     el.innerHTML=`<h4>${escapeHtml(e.title||'Händelse')}</h4>
-      <div class="meta">${escapeHtml(e.place||e.city||'')} • ${escapeHtml(e.date||'')}</div>
-      <div style="display:flex;gap:.5rem;margin-top:.25rem">
-        ${e.url? `<a href="${encodeURI(e.url)}" target="_blank" rel="noopener">Källa</a>`:''}
-        <a href="${pl}">Permalänk</a>
+      <div class="meta">${escapeHtml(countryName(e.country||''))} · ${escapeHtml(e.place||e.city||'')} · ${escapeHtml(e.date||'')}</div>
+      <div class="item-links">
+        ${e.url?`<a href="${encodeURI(e.url)}" target="_blank" rel="noopener">Källa</a>`:''}
+        <button class="copy-btn" onclick="event.stopPropagation();copyPermalink('${id}')">📋 Kopiera länk</button>
       </div>`;
-    el.addEventListener('click', ()=>{
-      const marker=markersById.get(id); if(marker){ map.setView(marker.getLatLng(), Math.max(map.getZoom(), 9)); marker.openPopup(); }
+    el.addEventListener('click',()=>{
+      const marker=markersById.get(id);
+      if(marker){
+        // Om markören sitter i ett cluster — spiderfya
+        cluster.zoomToShowLayer(marker,()=>{
+          map.setView(marker.getLatLng(),Math.max(map.getZoom(),9));
+          marker.openPopup();
+        });
+        setUrlState(id);
+      }
     });
     host.appendChild(el);
   });
 }
-function render(list){
-  cluster.clearLayers(); markersById.clear();
+
+function render(list,openId){
+  cluster.clearLayers();markersById.clear();
   const valid=list.map(enrichEvent).filter(e=>isValidCoord(e.lat,e.lng));
   valid.forEach(e=>{
     const id=eventId(e);
-    const m=L.marker([e.lat,e.lng], { title:e.title||'', icon:buildIcon(e) });
-    m.bindPopup(popupHtml(e)); markersById.set(id,m); cluster.addLayer(m);
+    const m=L.marker([e.lat,e.lng],{title:e.title||'',icon:buildIcon(e)});
+    m.bindPopup(popupHtml(e));
+    m.on('popupopen',()=>setUrlState(id));
+    markersById.set(id,m);cluster.addLayer(m);
   });
-  $('#count').textContent = `${valid.length} träffar`;
-  $('#resCount').textContent = `(${valid.length})`;
-  if(valid.length){ try{ const b=L.latLngBounds(valid.map(e=>[e.lat,e.lng])); map.fitBounds(b.pad(0.25)); }catch{} }
-  renderList(valid);
-  $('#results').style.display = valid.length ? 'block' : 'none';
-}
+  $('#count').textContent=`${valid.length} träffar`;
+  $('#resCount').textContent=`(${valid.length})`;
 
-/* 7) UI + Permalänk */
-const qEl=$('#q'), focusEl=$('#focus'), datesChip=$('#datesChip');
-function setPermalinkWithoutId(){
-  const q=qEl.value||''; const f=new URLSearchParams(location.search);
-  if(q) f.set('q', q); else f.delete('q');
-  const focus=focusEl.value||''; if(focus) f.set('focus', focus); else f.delete('focus');
-  f.delete('id');
-  history.replaceState(null,'', `${location.pathname}?${f.toString()}`);
-}
-function applyLegacyDateParams(url){
-  const u=new URL(url, location.href); const a=u.searchParams.get('after'); const b=u.searchParams.get('before'); if(!a&&!b) return ''; let patch=''; if(a) patch+=` >=${a}`; if(b) patch+=` <=${b}`; return patch;
-}
-function readFromURL(){
-  const u=new URL(location.href); const q=(u.searchParams.get('q')||'')+applyLegacyDateParams(location.href); const focus=u.searchParams.get('focus')||''; const openId=u.searchParams.get('id')||'';
-  if(q) qEl.value=q; if(focus){ focusEl.value=focus; ACTIVE.focus=focus; } update(openId);
-}
-
-$('#copylink').addEventListener('click', async ()=>{
-  setPermalinkWithoutId();
-  try{ await navigator.clipboard.writeText(location.href); const b=$('#copylink'); const t=b.textContent; b.textContent='✔︎ Kopierad'; setTimeout(()=>b.textContent=t,1400);}catch{}
-});
-$('#clearBtn').addEventListener('click', ()=>{ qEl.value=''; update(); qEl.focus(); });
-$('#searchBtn').addEventListener('click', ()=> update());
-$('#zoomAll').addEventListener('click', ()=>{
-  const list = EVENTS.filter(e=>matches(e, qEl.value||''))
-    .map(enrichEvent).filter(e=>isValidCoord(e.lat,e.lng));
-  if(list.length){ const b=L.latLngBounds(list.map(e=>[e.lat,e.lng])); map.fitBounds(b.pad(0.25)); }
-});
-$('#closeResults').addEventListener('click', ()=> $('#results').style.display='none');
-
-/* 8) LOOP */
-function update(openId){
-  const q=qEl.value||''; const {after,before}=extractDateRange(q);
-  datesChip.style.display = (after||before) ? 'inline-block' : 'none';
-  datesChip.textContent = (after||before) ? `Datum: ${after?fmtDate(after):'…'} — ${before?fmtDate(before):'…'}` : '';
-  ACTIVE.focus=(focusEl.value||'').toUpperCase();
-  const filtered = EVENTS.filter(e=>matches(e,q));
-  render(filtered);
-  setPermalinkWithoutId();
-  if(openId){ const m=markersById.get(openId); if(m){ map.setView(m.getLatLng(), Math.max(map.getZoom(),9)); m.openPopup(); } }
-}
-qEl.addEventListener('input', ()=> update());
-focusEl.addEventListener('change', ()=> update());
-
-/* 9) INIT */
-function boot(){
-  EVENTS.forEach(e=> e.id=eventId(e));
-  renderCatsUI(); renderCatsExplain();
-  // Collapsible: open on desktop, closed on mobile
-  const catDetails = document.getElementById('catbox');
-  if (matchMedia('(max-width: 980px)').matches) {
-    catDetails.open = false;
-  } else {
-    catDetails.open = true;
+  // Auto-zoom: bara vid första laddning eller explicit "Zooma"-knapptryck
+  // userMovedMap sätts när användaren pannar/zoomar manuellt
+  if(valid.length && !viewLocked && !userMovedMap && _isInitialLoad){
+    try{const b=L.latLngBounds(valid.map(e=>[e.lat,e.lng]));map.fitBounds(b.pad(0.15));}catch{}
+    _isInitialLoad=false;
   }
+
+  currentSortedList=sortList(valid);
+  renderList(currentSortedList);
+  $('#results').style.display=valid.length?'flex':'none';
+
+  // Öppna specifik händelse om openId finns
+  if(openId){
+    const m=markersById.get(openId);
+    if(m){
+      // Steg 1: Zooma till markören och expandera kluster
+      cluster.zoomToShowLayer(m,()=>{
+        // Steg 2: Centrera på markören med lämplig zoom
+        const targetZoom=Math.max(map.getZoom(),8);
+        map.setView(m.getLatLng(),targetZoom,{animate:true});
+        // Steg 3: Vänta på att zoom-animationen är klar, öppna sedan popup
+        map.once('zoomend moveend',()=>{
+          setTimeout(()=>{
+            m.openPopup();
+          },150);
+        });
+      });
+    } else {
+      // Markören hittades inte – händelsen kanske inte matchar aktiva filter
+      // Visa en toast som förklarar
+      showToast('Händelsen hittades inte – filtren kan behöva återställas',3000);
+    }
+  }
+}
+
+/* ===================================================
+ * 10) UI-HÄNDELSER
+ * =================================================== */
+$('#q').addEventListener('keydown',e=>{if(e.key==='Enter')update();});
+$('#q').addEventListener('input',()=>update());
+$('#searchBtn').addEventListener('click',()=>update());
+$('#clearBtn').addEventListener('click',()=>{$('#q').value='';ACTIVE.countries.clear();updateCountryBtn();renderCountryList();update();$('#q').focus();});
+
+$('#lockBtn').addEventListener('click',()=>{
+  viewLocked=!viewLocked;userMovedMap=false;
+  $('#lockBtn').classList.toggle('active',viewLocked);
+  $('#lockBtn').textContent=viewLocked?'🔒 Låst':'🔒 Lås vy';
+  showToast(viewLocked?'Kartvyn låst – auto-zoom av':'Kartvyn olåst');
+});
+
+$('#copylink').addEventListener('click',async()=>{
+  setUrlState('');
+  try{await navigator.clipboard.writeText(location.href);const b=$('#copylink');const t=b.textContent;b.textContent='✔ Kopierad';setTimeout(()=>b.textContent=t,1400);}catch{}
+});
+
+$('#zoomAll').addEventListener('click',()=>{
+  const list=EVENTS.filter(e=>matches(e,$('#q').value||'')).map(enrichEvent).filter(e=>isValidCoord(e.lat,e.lng));
+  if(list.length){
+    const b=L.latLngBounds(list.map(e=>[e.lat,e.lng]));
+    map.fitBounds(b.pad(0.15));
+    userMovedMap=false; // tillåt auto-zoom igen efter explicit zooma-klick
+  }
+});
+
+$('#closeResults').addEventListener('click',()=>{$('#results').style.display='none';});
+
+$('#helpBtn').addEventListener('click',()=>$('#helpOverlay').classList.add('open'));
+function closeHelp(){$('#helpOverlay').classList.remove('open');}
+$('#helpOverlay').addEventListener('click',e=>{if(e.target===$('#helpOverlay'))closeHelp();});
+
+/* ===================================================
+ * 11) UPDATE LOOP
+ * =================================================== */
+function update(openId){
+  const q=$('#q').value||'';
+  const{after,before}=extractDateRange(q);
+  $('#datesChip').style.display=(after||before)?'inline-block':'none';
+  $('#datesChip').textContent=(after||before)?`Datum: ${after?fmtDate(after):'…'} — ${before?fmtDate(before):'…'}`:'';
+  const filtered=EVENTS.filter(e=>matches(e,q));
+  render(filtered,openId);
+  if(!openId)setUrlState('');
+}
+
+/* ===================================================
+ * 12) BOOT
+ * =================================================== */
+function boot(){
+  EVENTS.forEach(e=>e.id=eventId(e));
+  renderCatsUI();renderCatsExplain();renderCountryList();
+  const catDetails=document.getElementById('catbox');
+  catDetails.open=!matchMedia('(max-width:980px)').matches;
   readFromURL();
 }
 boot();
