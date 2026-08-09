@@ -1,6 +1,7 @@
 /* Händelsedata för Veckobrevskartan.
    AKTUELL FIL – lägg nya händelser längst ned före den avslutande `);`.
-   Historiska poster ligger i events-archive-01.js till events-archive-05.js. */
+   Historiska poster ligger i events-archive-01.js till events-archive-05.js.
+   Behåll kommatecken efter varje händelse, även den sista, så kan nya poster klistras in direkt. */
 
 EVENTS.push(
 {country:'BE',cat:'LEGAL',title:'Illegal cigarettfabrik avslöjad utanför Charleroi',place:'Monceau-sur-Sambre, Charleroi (BE)',date:'2026-08-06',lat:50.4167,lng:4.3767,summary:'Belgisk tull slog till mot en professionellt uppbyggd illegal cigarettfabrik och beslagtog omkring 19 ton tobak och en miljon färdiga cigaretter. Inga personer greps på platsen.',url:'https://www.linkedin.com/posts/svensk-osint_illegal-cigarette-factory-with-42-beds-found-activity-7491953347449614336-rmxX'},
@@ -14,5 +15,5 @@ EVENTS.push(
 {country:'CH',cat:'INFRA',title:'Omkring 200 statliga konton komprometterades i SharePoint-intrång',place:'Bern (CH)',date:'2026-07-28',lat:46.9480,lng:7.4474,summary:'Ett cyberangrepp mot den schweiziska förbundsförvaltningens SharePoint-miljö komprometterade omkring 200 användar- och tekniska konton. Någon angripare har ännu inte identifierats.',url:'https://www.linkedin.com/feed/update/urn:li:activity:7492165373354614784'},
 {country:'UA',cat:'INTEL',title:'Misstänkt FSB-agent kartlade militära mål vid Pavlohrad',place:'Pavlohrad (UA)',date:'2026-08-06',lat:48.5296,lng:35.8662,summary:'En kvinna misstänks ha fotograferat reservledningsplatser, militära grupperingsplatser och parkeringsplatser för militärfordon och skickat geolokaliserade uppgifter till FSB.',url:'https://www.linkedin.com/feed/update/urn:li:activity:7492166518164824064'},
 {country:'UA',cat:'INTEL',title:'Två misstänkta ryska agenter gripna i Mykolajiv',place:'Mykolajiv (UA)',date:'2026-08-07',lat:46.9750,lng:31.9946,summary:'SBU uppger att två personer separat kartlade logistisk infrastruktur, luftvärn, reservkommandoposter och vägspärrar för ryska robot- och drönarangrepp.',url:'https://www.linkedin.com/feed/update/urn:li:activity:7492168067985375232'},
-{country:'NO',cat:'POLICY',title:'Tidigare CIA-officer godkänd som USA:s ambassadör i Norge',place:'Oslo (NO)',date:'2026-08-07',lat:59.9139,lng:10.7522,summary:'USA:s senat godkände Michael Kavoukjian som ambassadör i Norge. Han har tidigare tjänstgjort som operations officer vid CIA och har pekat ut Arktis och den norsk-ryska gränsen som prioriterade säkerhetsfrågor.',url:'https://www.linkedin.com/feed/update/urn:li:activity:7492152298333413397'}
+{country:'NO',cat:'POLICY',title:'Tidigare CIA-officer godkänd som USA:s ambassadör i Norge',place:'Oslo (NO)',date:'2026-08-07',lat:59.9139,lng:10.7522,summary:'USA:s senat godkände Michael Kavoukjian som ambassadör i Norge. Han har tidigare tjänstgjort som operations officer vid CIA och har pekat ut Arktis och den norsk-ryska gränsen som prioriterade säkerhetsfrågor.',url:'https://www.linkedin.com/feed/update/urn:li:activity:7492152298333413397'},
 );
