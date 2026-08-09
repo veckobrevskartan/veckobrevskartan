@@ -1,0 +1,122 @@
+/* Responsiva förbättringar för Veckobrevskartan */
+#app{
+  grid-template-rows:auto minmax(0,1fr)!important;
+  height:100vh!important;
+  height:100dvh!important;
+  min-height:0!important;
+}
+#main{
+  height:auto!important;
+  min-height:0!important;
+  overflow:hidden;
+}
+
+/* Resultatpanelen kan minimeras utan att försvinna. */
+.results.collapsed{width:auto;max-height:none}
+.results.collapsed .sort-row,
+.results.collapsed .items,
+.results.collapsed #zoomAll{display:none}
+.results.collapsed header{border-bottom:none}
+.panel-toggle{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:32px;height:32px;padding:0;
+  border:1px solid var(--border);border-radius:999px;
+  background:#fff;cursor:pointer;font-size:18px;line-height:1;color:#445;
+}
+.panel-toggle:hover{background:#f5f7f9;border-color:#b8c0c9}
+
+/* Gör kategorirutan tydligt öppnings-/stängningsbar. */
+details.catbox>summary{
+  min-height:38px;padding:.55rem .7rem;
+}
+details.catbox>summary::-webkit-details-marker{display:none}
+details.catbox>summary::after{
+  content:'▾';margin-left:auto;font-size:15px;color:#667;
+  transition:transform .18s;
+}
+details.catbox[open]>summary::after{transform:rotate(180deg)}
+
+@media(max-width:980px){
+  details.catbox{width:min(280px,calc(100vw - 20px))}
+  details.catbox:not([open]){width:auto}
+  .input{width:min(52vw,380px)}
+  .results{width:min(440px,calc(100vw - 20px))}
+}
+
+@media(max-width:600px){
+  html,body{overscroll-behavior:none}
+
+  /* Toppfältet får brytas utan att stjäla höjd från kartan. */
+  .topbar{
+    gap:.3rem;
+    padding:.38rem max(.4rem,env(safe-area-inset-right)) .38rem max(.4rem,env(safe-area-inset-left));
+    align-content:start;
+  }
+  .brand{font-size:12px}
+  .input{width:100%;order:10;flex-basis:100%;min-height:40px}
+  .country-btn{min-width:0;max-width:145px;min-height:40px;padding:.4rem .55rem}
+  .country-btn .lbl{max-width:92px}
+  .btn{min-height:40px;padding:.38rem .58rem}
+
+  /* Sökningen uppdateras redan medan man skriver, så separat Sök-knapp behövs inte på mobil. */
+  #searchBtn{display:none}
+  #clearBtn,#lockBtn,#copylink,#helpBtn{
+    width:40px;padding:0;overflow:hidden;white-space:nowrap;
+  }
+  #clearBtn{font-size:0}
+  #clearBtn::before{content:'✕';font-size:15px}
+  #lockBtn{font-size:0}
+  #lockBtn::before{content:'🔒';font-size:15px}
+  #copylink{font-size:0}
+  #copylink::before{content:'🔗';font-size:15px}
+  #helpBtn{font-size:0}
+  #helpBtn::before{content:'?';font-size:15px;font-weight:700}
+  #datesChip,#count{order:20}
+  #count{font-size:12px}
+  .spacer{display:none}
+
+  /* Resultat som nedre mobilpanel. */
+  .results{
+    left:8px;right:8px;top:auto;
+    bottom:calc(8px + env(safe-area-inset-bottom));
+    width:auto;max-height:min(44dvh,430px);
+    border-radius:14px;z-index:920;
+  }
+  .results header{padding:.42rem .5rem;min-height:46px}
+  .results.collapsed{right:auto;width:auto;max-width:calc(100vw - 16px)}
+  .results.collapsed #resTitle{
+    max-width:52vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .results .items{-webkit-overflow-scrolling:touch}
+  .item{padding:.62rem .7rem}
+  .item h4{font-size:14px}
+  .item .meta{font-size:12px}
+
+  /* Kategorier som övre högerpanel; kollapsad blir den en kompakt knapp. */
+  details.catbox{
+    right:8px;top:8px;width:min(285px,calc(100vw - 16px));
+    max-height:min(46dvh,420px);z-index:930;
+  }
+  details.catbox:not([open]){width:auto;max-width:calc(100vw - 16px)}
+  details.catbox .content{max-height:38dvh;-webkit-overflow-scrolling:touch}
+  .catrow{padding:.32rem 0}
+  .catrow label{min-height:30px}
+
+  /* Teckenförklaringen visas bara när resultatpanelen är minimerad. */
+  .legend{
+    left:8px;right:auto;top:auto;
+    bottom:calc(62px + env(safe-area-inset-bottom));
+    max-width:min(220px,calc(100vw - 16px));z-index:910;
+  }
+  body:not(.results-panel-collapsed) .legend{display:none}
+  .legend .content{max-height:30dvh}
+
+  .leaflet-control-attribution{font-size:9px;max-width:72vw;white-space:normal}
+  .help-box{max-height:86dvh;overflow:auto;padding:1.1rem}
+}
+
+@media(max-width:380px){
+  .brand{display:none}
+  .country-btn{max-width:132px}
+  .results.collapsed #resTitle{max-width:44vw}
+}
