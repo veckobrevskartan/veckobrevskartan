@@ -379,9 +379,9 @@ const COUNTRY_ALIASES = {
 const map = L.map('map',{zoomSnap:.5,worldCopyJump:true}).setView([56.2,12.9],4);
 
 const TILE_LAYERS = {
-  'Ljus (standard)': L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{
-    maxZoom:19, subdomains:'abcd',
-    attribution:'&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+  'Ljus (standard)': L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    maxZoom:19,
+    attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'
   }),
   'Mörk': L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
     maxZoom:19, subdomains:'abcd',
