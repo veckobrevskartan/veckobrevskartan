@@ -57,6 +57,9 @@ details.catbox[open]>summary::after{transform:rotate(180deg)}
   .country-btn{min-width:0;max-width:145px;min-height:40px;padding:.4rem .55rem}
   .country-btn .lbl{max-width:92px}
   .btn{min-height:40px;padding:.38rem .58rem}
+  .date-btn{width:40px;padding:0;overflow:hidden;white-space:nowrap;justify-content:center;font-size:0}
+  .date-btn>span:first-child{font-size:15px}
+  .date-dd{position:fixed;top:auto;left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));width:auto;z-index:1200}
 
   /* Sökningen uppdateras redan medan man skriver, så separat Sök-knapp behövs inte på mobil. */
   #searchBtn{display:none}
