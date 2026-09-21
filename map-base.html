@@ -776,29 +776,22 @@ function renderList(list){
 /* Öppna en markör robust – hanterar kluster, animationer och GitHub Pages-latens */
 function openMarkerRobust(m, attempt){
   attempt = attempt || 1;
-  const MAX = 12;         // max antal försök
-  const DELAY = 350;      // ms mellan försök (totalt ~4s)
-
-  // Flytta kartan till markörens position med lämplig zoom
   const latlng = m.getLatLng();
-  const targetZoom = Math.max(map.getZoom(), 8);
+  const targetZoom = Math.max(map.getZoom(), 9);
+
+  // Visa alltid den länkade markören och öppna popupen efter klusteranimationen.
+  // Tidigare väntade funktionen på ett zoomend-event som inte alltid inträffar
+  // när markören redan är synlig.
+  const reveal = () => {
+    map.setView(latlng, targetZoom, {animate:false});
+    setTimeout(() => m.openPopup(), 80);
+  };
 
   // Försök expandera klustret som innehåller markören
-  cluster.zoomToShowLayer(m, () => {
-    // Efter zoomToShowLayer – vänta på att animationen landar
-    map.once('zoomend', () => {
-      map.setView(latlng, Math.max(map.getZoom(), 8), {animate:false});
-      tryOpenPopup(m, 1);
-    });
-  });
+  cluster.zoomToShowLayer(m, reveal);
 
-  // Fallback om zoomToShowLayer aldrig triggar zoomend (redan rätt zoom)
-  setTimeout(() => {
-    if(!m.isPopupOpen()){
-      map.setView(latlng, targetZoom, {animate:false});
-      tryOpenPopup(m, 1);
-    }
-  }, 600);
+  // Fallback om klustret redan är öppet eller callbacken fördröjs.
+  setTimeout(() => { if(!m.isPopupOpen())reveal(); }, 900);
 }
 
 function tryOpenPopup(m, attempt){
